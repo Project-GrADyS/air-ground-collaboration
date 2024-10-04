@@ -2,35 +2,30 @@ import logging
 import random
 
 from gradysim.protocol.interface import IProtocol
-from gradysim.protocol.messages.communication import BroadcastMessageCommand, SendMessageCommand
-from gradysim.protocol.messages.mobility import GotoCoordsMobilityCommand
+from gradysim.protocol.messages.communication import BroadcastMessageCommand
 from gradysim.protocol.messages.telemetry import Telemetry
-from gradysim.protocol.plugin.random_mobility import RandomMobilityPlugin, RandomMobilityConfig
-from gradysim.protocol.plugin.mission_mobility import MissionMobilityPlugin, MissionMobilityConfiguration, LoopMission, SetSpeedMobilityCommand
+from gradysim.protocol.plugin.mission_mobility import MissionMobilityPlugin, MissionMobilityConfiguration, LoopMission
 
 from typing import List, Tuple, Dict
 import json
 from tabulate import tabulate
 
-
 class GroundProtocol(IProtocol):
     sent: int
     received_sensor: int
     received_uav: int
-    config: RandomMobilityConfig
-    ground: RandomMobilityPlugin
     db_sensor: List[int]
     received_directions: List[Tuple]
-    
+    mission_plan: MissionMobilityPlugin
+    id: int
 
     def initialize(self):
         self.sent = 0
         self.received_sensor = 0
         self.received_uav = 0
-        #self.config = RandomMobilityConfig(z_range=(0,0))
-        #self.ground = RandomMobilityPlugin(self, config=self.config)
         self.db_sensor = []
         self.received_directions = []
+        self.id = self.provider.get_id()
         self.mission_list = [
             [(50, 50, 0)]
         ]
@@ -45,44 +40,8 @@ class GroundProtocol(IProtocol):
             "mobility",  
             self.provider.current_time() + 1
         )
-        
-    '''
-    def define_mission(self):
-        mission_list = []
-
-        mission_list += [(-50, 50, 7)]
-        mission_list += [(-50, -50, 7)]
-        mission_list += [(-17, -50, 7)]
-        mission_list += [(17, -50, 7)]
-        mission_list += [(50, -50, 7)]
-
-        return mission_list
-    '''
-    
-    def start_mission_og(self):
-        if not (self.mission_list == []):
-            self.mission_plan.start_mission(self.mission_list.pop())
-        else:
-            self.mission_plan.stop_mission()
     
     def handle_timer(self, timer: str):
-        '''
-        if timer == "message":
-            self.sent += 1
-            msg = {
-                "type": "message"
-            }
-            command = BroadcastMessageCommand(
-                message=json.dumps(msg)
-            )
-
-            self.provider.send_communication_command(command)
-
-            self.provider.schedule_timer(
-                "message",
-                self.provider.current_time() + 1
-            )
-        '''
         if timer == "mobility":
             self.start_mission(ml=self.mission_list)
             self.provider.schedule_timer(
@@ -96,6 +55,7 @@ class GroundProtocol(IProtocol):
             if msg["type"] == "ugv_message":
                 reply_msg = {
                     "type": "uav_message",
+                    "id": self.id
                 }
                 command = BroadcastMessageCommand(
                         message=json.dumps(reply_msg)
@@ -104,24 +64,13 @@ class GroundProtocol(IProtocol):
             elif msg["type"] == "sensor_direction":
                 self.received_directions.append(msg["directions"])
                 self.received_uav += 1
-                #print("=================GROUND==============")
-                #print(msg["directions"])
-                #print("=================================")
                 dir = [tuple(sublist[1]) for sublist in msg["directions"]]
                 inverted_dir = dir[::-1]
                 mission_list2 = [
                     dir
                 ]
-                #print(mission_list2)
+                self.mission_plan.stop_mission()
                 self.start_mission(mission_list2)
-                '''
-                command = GotoCoordsMobilityCommand(
-                    dir[0],
-                    dir[1],
-                    dir[2]
-                )
-                '''
-                #self.provider.send_mobility_command(command)
             elif msg["type"] == "sensor_message":
                 self.received_sensor += 1
                 self.check_duplicates(msg["id"])
@@ -134,9 +83,10 @@ class GroundProtocol(IProtocol):
     
     def start_mission(self, ml):
         if not (ml == []):
-            self.mission_plan.start_mission(ml.pop())
-        else:
-            self.mission_plan.stop_mission()
+            ml2 = ml.pop()
+            self.mission_plan.start_mission(ml2)
+        #else:
+            #self.mission_plan.stop_mission()
 
     
     def handle_telemetry(self, telemetry: Telemetry):

@@ -18,7 +18,7 @@ def main():
     # simulator time, so we don't have to wait for that long
     #self.provider.tracked_variables['blabla'] = 'oi'
     config = SimulationConfiguration(
-        duration=250,
+        duration=280,
         real_time=True,
         execution_logging=False
     )
@@ -28,6 +28,7 @@ def main():
     sensor_ids: list[int] = []
 
     # UGV
+    
     for _ in range(1):
         ugv_ids.append(
             builder.add_node(GroundProtocol, (-50, -50, 0))

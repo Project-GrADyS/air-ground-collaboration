@@ -3,11 +3,9 @@ import random
 import math
 
 from gradysim.protocol.interface import IProtocol
-from gradysim.protocol.messages.communication import BroadcastMessageCommand, SendMessageCommand
-from gradysim.protocol.messages.mobility import GotoCoordsMobilityCommand
+from gradysim.protocol.messages.communication import BroadcastMessageCommand
 from gradysim.protocol.messages.telemetry import Telemetry
-from gradysim.protocol.plugin.random_mobility import RandomMobilityPlugin, RandomMobilityConfig
-from gradysim.protocol.plugin.mission_mobility import MissionMobilityPlugin, MissionMobilityConfiguration, LoopMission, SetSpeedMobilityCommand
+from gradysim.protocol.plugin.mission_mobility import MissionMobilityPlugin, MissionMobilityConfiguration, LoopMission
 
 from typing import List, Tuple, Dict
 import json
@@ -20,9 +18,12 @@ class AirProtocol(IProtocol):
     sent_ground: int
     position: Tuple
     sensors: List
+    mission_plan: MissionMobilityPlugin
+    ugv_db: List[int]
     
     def initialize(self):
         self.sent = 0
+        self.ugv_db = []
         self.received_sensor = 0
         self.received_ugv = 0
         self.position = Tuple[float, float, float]
@@ -87,8 +88,8 @@ class AirProtocol(IProtocol):
         mission_list = self.define_mission()
         if not (mission_list == []):
             self.mission_plan.start_mission(mission_list.pop())
-        else:
-            self.mission_plan.stop_mission()
+        #else:
+            #self.mission_plan.stop_mission()
             
 
     def handle_timer(self, timer: str):
@@ -119,10 +120,7 @@ class AirProtocol(IProtocol):
                     pos_list = []
                     i_x = self.position[0]
                     i_y = self.position[1]
-                    #print("===============SENSORS===============")
-                    #print(self.sensors)
                     for s in self.sensors:
-                        #print(s)
                         pos = self.calculate_direction(s[1][0], s[1][1], s[1][2], 100, i_x, i_y)
                         i_x = pos[0]
                         i_y = pos[1]
@@ -139,6 +137,8 @@ class AirProtocol(IProtocol):
                         message=json.dumps(reply_msg)
                     )
                     self.provider.send_communication_command(command)
+                    self.ugv_db.append(msg["id"])
+                    self.sensors = []
     
     def check_duplicates(self, id, pos):
         for s in self.sensors:
@@ -147,44 +147,6 @@ class AirProtocol(IProtocol):
         self.sensors.append([id, pos])
     
     def calculate_direction(self, x, y, z, length, initial_x, initial_y):
-        #print("=========ORIGINAL==========")
-        #print([x, y, z])
-        #print("==========UAV=============")
-        #x_uav = self.position[0]
-        #y_uav = self.position[1]
-        #print([x_uav, y_uav, self.position[2]])
-        '''
-        theta = math.atan2(y - initial_y, x - initial_x)
-        d = length / 2
-        right_edge = initial_y + (d - initial_x) * math.tan(theta)
-        left_edge = initial_y + ((-1) * d - initial_x) * math.tan(theta)
-        top_edge = initial_x + (d - initial_y) * 1 / math.tan(theta)
-        bottom_edge = initial_x + ((-1) * d - initial_y) * 1 / math.tan(theta)
-        '''
-        #print("==========EDGES=============")
-        #print("right = ", right_edge)
-        #print("left = ", left_edge)
-        #print("top = ", top_edge)
-        #print("bottom = ", bottom_edge)
-        '''
-        vector_x = x - initial_x
-        vector_y = y - initial_y
-        direction_x = vector_x / math.sqrt(math.pow(vector_x, 2) + math.pow(vector_y, 2))
-        direction_y = vector_y / math.sqrt(math.pow(vector_x, 2) + math.pow(vector_y, 2))
-        if abs(direction_x) > abs(direction_y):
-            if (left_edge > 0 and left_edge > d) or (left_edge < 0 and left_edge < d):
-                dir_y = right_edge
-            else:
-                dir_y = left_edge
-            dir_x = length/2
-        elif abs(direction_x) < abs(direction_y):
-            if (top_edge > 0 and top_edge > d) or (top_edge < 0 and top_edge < d):
-                dir_x = bottom_edge
-            else:
-                dir_x = top_edge
-            dir_y = length/2
-        '''
-
         vector_x = x - initial_x
         vector_y = y - initial_y
         direction_x = vector_x / math.sqrt(math.pow(vector_x, 2) + math.pow(vector_y, 2))
@@ -223,21 +185,7 @@ class AirProtocol(IProtocol):
             else:
                 dir_y = -50
             dir_x = initial_x + (dir_y - initial_x ) / math.tan(theta)
-        '''
-        print("==========EDGES=============")
-        yr = y + tl * dy
-        xr = 50
-        print(f"right = ({xr},{yr})")
-        yl = y + tr * dy
-        xl = 50
-        print(f"left = ({xl},{yl})")
-        xt = x + tt * dx
-        yt = 50
-        print(f"top = ({xt},{yt})")
-        xb = x + tb * dx
-        yb = 50
-        print(f"bottom = ({xb},{yb})")
-        '''
+
         return (dir_x, dir_y, z)
 
     def handle_telemetry(self, telemetry: Telemetry):
