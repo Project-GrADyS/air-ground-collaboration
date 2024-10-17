@@ -32,7 +32,7 @@ class GroundProtocol(IProtocol):
         
         self.mission_plan = MissionMobilityPlugin(self, MissionMobilityConfiguration(
             loop_mission=LoopMission.NO, 
-            speed=2,
+            speed=1,
             tolerance=0.0
         ))
 
@@ -55,22 +55,23 @@ class GroundProtocol(IProtocol):
             if msg["type"] == "ugv_message":
                 reply_msg = {
                     "type": "uav_message",
-                    "id": self.id
+                    "id": self.id,
+                    "received_sensor": self.db_sensor
                 }
                 command = BroadcastMessageCommand(
                         message=json.dumps(reply_msg)
                     )
                 self.provider.send_communication_command(command)
             elif msg["type"] == "sensor_direction":
-                self.received_directions.append(msg["directions"])
-                self.received_uav += 1
-                dir = [tuple(sublist[1]) for sublist in msg["directions"]]
-                inverted_dir = dir[::-1]
-                mission_list2 = [
-                    dir
-                ]
-                self.mission_plan.stop_mission()
-                self.start_mission(mission_list2)
+                if msg["directions"] != []:
+                    self.received_directions.append(msg["directions"])
+                    self.received_uav += 1
+                    dir = [tuple(sublist[1]) for sublist in msg["directions"]]
+                    mission_list2 = [
+                        dir
+                    ]
+                    self.mission_plan.stop_mission()
+                    self.start_mission(mission_list2)
             elif msg["type"] == "sensor_message":
                 self.received_sensor += 1
                 self.check_duplicates(msg["id"])
@@ -85,9 +86,6 @@ class GroundProtocol(IProtocol):
         if not (ml == []):
             ml2 = ml.pop()
             self.mission_plan.start_mission(ml2)
-        #else:
-            #self.mission_plan.stop_mission()
-
     
     def handle_telemetry(self, telemetry: Telemetry):
         self.position = telemetry.current_position

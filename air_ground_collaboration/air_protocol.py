@@ -30,7 +30,7 @@ class AirProtocol(IProtocol):
         self.sensors = []
         self.mission_plan = MissionMobilityPlugin(self, MissionMobilityConfiguration(
             loop_mission=LoopMission.NO, 
-            speed=40
+            speed=60
         ))
         
         self.provider.schedule_timer(
@@ -82,15 +82,11 @@ class AirProtocol(IProtocol):
         mission_sublist += self.generate_mission_section(0, 17, 50, 50, 7, 4)
         
         return [mission_sublist]
-
             
     def start_mission(self):
         mission_list = self.define_mission()
         if not (mission_list == []):
             self.mission_plan.start_mission(mission_list.pop())
-        #else:
-            #self.mission_plan.stop_mission()
-            
 
     def handle_timer(self, timer: str):
         if timer == "message":
@@ -121,13 +117,11 @@ class AirProtocol(IProtocol):
                     i_x = self.position[0]
                     i_y = self.position[1]
                     for s in self.sensors:
-                        pos = self.calculate_direction(s[1][0], s[1][1], s[1][2], 100, i_x, i_y)
-                        i_x = pos[0]
-                        i_y = pos[1]
-                        #i_x = s[1][0]
-                        #i_y = s[1][1]
-                        pos_list.append([s[0], pos])
-                    #self.sensors = []
+                        if s[0] not in msg["received_sensor"]:
+                            pos = self.calculate_direction(s[1][0], s[1][1], s[1][2], 100, i_x, i_y)
+                            i_x = pos[0]
+                            i_y = pos[1]
+                            pos_list.append([s[0], pos])
                     self.received_ugv += 1
                     reply_msg = {
                         "type": "sensor_direction",
@@ -138,7 +132,6 @@ class AirProtocol(IProtocol):
                     )
                     self.provider.send_communication_command(command)
                     self.ugv_db.append(msg["id"])
-                    self.sensors = []
     
     def check_duplicates(self, id, pos):
         for s in self.sensors:
@@ -174,16 +167,16 @@ class AirProtocol(IProtocol):
         if abs(direction_x) > abs(direction_y):
             #Move in the Y direction
             if x > initial_x:
-                dir_x = 50
+                dir_x = x + 1
             else:
-                dir_x = -50
+                dir_x = x - 1
             dir_y = initial_y + (dir_x - initial_x) * math.tan(theta)
         else:
             #Move in the X direction
             if y > initial_y:
-                dir_y = 50
+                dir_y = y + 1
             else:
-                dir_y = -50
+                dir_y = y - 1
             dir_x = initial_x + (dir_y - initial_x ) / math.tan(theta)
 
         return (dir_x, dir_y, z)
@@ -192,5 +185,7 @@ class AirProtocol(IProtocol):
         self.position = telemetry.current_position
 
     def finish(self):
+        print(f"Final counter values: "
+                     f"received_sensor={self.sensors}")
         logging.info(f"Final counter values: "
                      f"received_sensor={self.sensors}")
