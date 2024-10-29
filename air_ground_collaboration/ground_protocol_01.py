@@ -26,7 +26,9 @@ class GroundProtocol(IProtocol):
         self.db_sensor = []
         self.received_directions = []
         self.id = self.provider.get_id()
+        self.got_all = False
         self.mission_list = [
+            [(50, -30, 0)],
             [(50, 50, 0)]
         ]
         
@@ -44,10 +46,13 @@ class GroundProtocol(IProtocol):
     def handle_timer(self, timer: str):
         if timer == "mobility":
             self.start_mission(ml=self.mission_list)
+            self.start = self.provider.current_time()
+            '''
             self.provider.schedule_timer(
             "mobility",  
             self.provider.current_time() + 1
             )
+            '''
 
     def handle_packet(self, message: str):
         msg = json.loads(message)
@@ -75,6 +80,11 @@ class GroundProtocol(IProtocol):
             elif msg["type"] == "sensor_message":
                 self.received_sensor += 1
                 self.check_duplicates(msg["id"])
+                if len(self.db_sensor) == 3 and not self.got_all:
+                    self.got_all = True
+                    self.end = self.provider.current_time()
+                    length = self.end - self.start
+                    print("It took", length, "seconds!")
     
     def check_duplicates(self, id):
         for i in self.db_sensor:

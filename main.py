@@ -1,5 +1,5 @@
-from air_ground_collaboration.air_protocol import AirProtocol
-from air_ground_collaboration.ground_protocol import GroundProtocol
+from air_ground_collaboration.air_protocol_01 import AirProtocol
+from air_ground_collaboration.ground_protocol_01 import GroundProtocol
 from air_ground_collaboration.sensor_protocol import SensorProtocol
 from gradysim.simulator.handler.communication import CommunicationMedium, CommunicationHandler
 from gradysim.simulator.handler.mobility import MobilityHandler
@@ -18,8 +18,8 @@ def main():
     # simulator time, so we don't have to wait for that long
     #self.provider.tracked_variables['blabla'] = 'oi'
     config = SimulationConfiguration(
-        duration=280,
-        real_time=True,
+        duration=1000,
+        real_time=100,
         execution_logging=False
     )
     builder = SimulationBuilder(config)
@@ -35,12 +35,27 @@ def main():
         )
     
     #Sensor
+    
     for _ in range(3):
         rx = uniform(-50, 50)
         ry = uniform(-50, 50)
         sensor_ids.append(
             builder.add_node(SensorProtocol, (rx, ry, 0))
         )
+    
+    '''
+    sensor_ids.append(
+            builder.add_node(SensorProtocol, (-24, 34, 0))
+        )
+    sensor_ids.append(
+            builder.add_node(SensorProtocol, (-16, -25, 0))
+        )
+    sensor_ids.append(
+            builder.add_node(SensorProtocol, (-45, -30, 0))
+        )
+    '''
+    
+
     
     #builder.add_node(SensorProtocol, (17, 50, 0))
     #builder.add_node(SensorProtocol, (17, 0, 0))

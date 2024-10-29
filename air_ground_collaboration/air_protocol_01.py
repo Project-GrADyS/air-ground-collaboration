@@ -7,9 +7,10 @@ from gradysim.protocol.messages.communication import BroadcastMessageCommand
 from gradysim.protocol.messages.telemetry import Telemetry
 from gradysim.protocol.plugin.mission_mobility import MissionMobilityPlugin, MissionMobilityConfiguration, LoopMission
 
+from air_ground_collaboration.grid_path_planning import GridPathPlanning
+
 from typing import List, Tuple, Dict
 import json
-
 
 class AirProtocol(IProtocol):
     sent_sensor: int
@@ -28,9 +29,10 @@ class AirProtocol(IProtocol):
         self.received_ugv = 0
         self.position = Tuple[float, float, float]
         self.sensors = []
+        self.path_planning = GridPathPlanning()
         self.mission_plan = MissionMobilityPlugin(self, MissionMobilityConfiguration(
-            loop_mission=LoopMission.NO, 
-            speed=60
+            loop_mission=LoopMission.NO,
+            speed=10
         ))
         
         self.provider.schedule_timer(
@@ -43,6 +45,7 @@ class AirProtocol(IProtocol):
             self.provider.current_time() + 1  
         )
 
+    '''
     
     def generate_mission_section(self, start_x, start_y, end_x, end_y, step, substep):
         mission_section = []
@@ -82,9 +85,10 @@ class AirProtocol(IProtocol):
         mission_sublist += self.generate_mission_section(0, 17, 50, 50, 7, 4)
         
         return [mission_sublist]
+    '''
             
     def start_mission(self):
-        mission_list = self.define_mission()
+        mission_list = self.path_planning.define_mission()
         if not (mission_list == []):
             self.mission_plan.start_mission(mission_list.pop())
 
@@ -116,12 +120,14 @@ class AirProtocol(IProtocol):
                     pos_list = []
                     i_x = self.position[0]
                     i_y = self.position[1]
+                    received_sensor_ugv = msg["received_sensor"]
                     for s in self.sensors:
-                        if s[0] not in msg["received_sensor"]:
+                        if s[0] not in received_sensor_ugv:
                             pos = self.calculate_direction(s[1][0], s[1][1], s[1][2], 100, i_x, i_y)
                             i_x = pos[0]
                             i_y = pos[1]
                             pos_list.append([s[0], pos])
+                            received_sensor_ugv.append(s[0])
                     self.received_ugv += 1
                     reply_msg = {
                         "type": "sensor_direction",
