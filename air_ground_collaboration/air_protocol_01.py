@@ -7,7 +7,7 @@ from gradysim.protocol.messages.communication import BroadcastMessageCommand
 from gradysim.protocol.messages.telemetry import Telemetry
 from gradysim.protocol.plugin.mission_mobility import MissionMobilityPlugin, MissionMobilityConfiguration, LoopMission
 
-from air_ground_collaboration.grid_path_planning import GridPathPlanning
+from air_ground_collaboration.path_planning.grid_path_planning import GridPathPlanning
 
 from typing import List, Tuple, Dict
 import json

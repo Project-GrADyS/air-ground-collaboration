@@ -8,7 +8,10 @@ from gradysim.simulator.handler.visualization import VisualizationHandler
 from gradysim.simulator.simulation import SimulationBuilder, SimulationConfiguration
 from random import uniform
 import datetime
+import seaborn as sns
+import matplotlib.pyplot as plt
 
+communication_range = 20
 
 def main():
     # To enhance our viewing experience we are setting the simulator
@@ -19,7 +22,7 @@ def main():
     #self.provider.tracked_variables['blabla'] = 'oi'
     config = SimulationConfiguration(
         duration=1000,
-        real_time=100,
+        real_time=1000,
         execution_logging=False
     )
     builder = SimulationBuilder(config)
@@ -43,60 +46,25 @@ def main():
             builder.add_node(SensorProtocol, (rx, ry, 0))
         )
     
-    '''
-    sensor_ids.append(
-            builder.add_node(SensorProtocol, (-24, 34, 0))
-        )
-    sensor_ids.append(
-            builder.add_node(SensorProtocol, (-16, -25, 0))
-        )
-    sensor_ids.append(
-            builder.add_node(SensorProtocol, (-45, -30, 0))
-        )
-    '''
-    
-
-    
-    #builder.add_node(SensorProtocol, (17, 50, 0))
-    #builder.add_node(SensorProtocol, (17, 0, 0))
-    #builder.add_node(SensorProtocol, (50, 0, 0))
-    #builder.add_node(SensorProtocol, (50, 50, 0))
-
-    #builder.add_node(SensorProtocol, (50, 0, 0))
-    #builder.add_node(SensorProtocol, (17, 0, 0))
-    #builder.add_node(SensorProtocol, (17, -50, 0))
-    #builder.add_node(SensorProtocol, (50, -50, 0))
-
-    #builder.add_node(SensorProtocol, (17, 50, 0))
-    #builder.add_node(SensorProtocol, (-17, 50, 0))
-    #builder.add_node(SensorProtocol, (17, 0, 0))
-    #builder.add_node(SensorProtocol, (-17, 0, 0))
-
     # UAV
     uav_id = builder.add_node(AirProtocol, (-50, -50, 2))
-    #builder.add_node(AirProtocol, (0, 1, 7))
-    #builder.add_node(AirProtocol, (0, 2, 7))
-    #builder.add_node(AirProtocol, (-48, -48, 7))
-
-    #builder.add_node(CounterProtocol, (0,0,5))
 
     builder.add_handler(TimerHandler())
 
     medium = CommunicationMedium(
-        transmission_range=10
+        transmission_range=communication_range
     )
     builder.add_handler(CommunicationHandler(medium))
 
     builder.add_handler(MobilityHandler())
 
-    # Adding visualization handler to the simulator
     builder.add_handler(VisualizationHandler())
 
     simulation = builder.build()
-    #simulation.start_simulation()
 
     # Listas para guardar as posições dos nós durante a simulação
-    positions = []
+    positions_uav = []
+    positions_ugv = []
     sensor_positions = []
 
     for sensor_id in sensor_ids:
@@ -114,7 +82,7 @@ def main():
         current_time = simulation._current_timestamp # Não gostei disso, vou tornar uma propriedade mais fácil de acessar
 
         uav_position = simulation.get_node(uav_id).position
-        positions.append({
+        positions_uav.append({
             "role": "uav",
             "agent": uav_id,
             "timestamp": current_time,
@@ -125,7 +93,7 @@ def main():
 
         for ugv_id in ugv_ids:
             ugv_position = simulation.get_node(ugv_id).position
-            positions.append({
+            positions_ugv.append({
                 "role": "ugv",
                 "agent": ugv_id,
                 "timestamp": current_time,
@@ -139,8 +107,10 @@ def main():
     import matplotlib.pyplot as plt
     from matplotlib.patheffects import PathPatchEffect, SimpleLineShadow, Normal
 
-    position_df = pd.DataFrame.from_records(positions)
-    position_df = position_df.set_index("timestamp")
+    position_uav_df = pd.DataFrame.from_records(positions_uav)
+    position_ugv_df = pd.DataFrame.from_records(positions_ugv)
+    position_uav_df = position_uav_df.set_index("timestamp")
+    position_ugv_df = position_ugv_df.set_index("timestamp")
 
     sensor_df = pd.DataFrame.from_records(sensor_positions)
 
@@ -163,12 +133,19 @@ def main():
      )
 
     # Plotando as posições dos agentes ao longo do tempo. Líder em vermelho e seguidores em azul
-    grouped = position_df.groupby("agent")
+    grouped_uav = position_uav_df.groupby("agent")
+    grouped_ugv = position_ugv_df.groupby("agent")
     
-    for name, group in grouped:
+    for name, group in grouped_uav:
         role = group["role"].iloc[0]
         plt.plot(group['x'], group['y'], marker='o', linestyle='-', ms=1,
-                 label=role, color='#bad1f720' if role == "uav" else '#cf7073')
+                 label=role, color='#bad1f720')
+    
+    for name, group in grouped_ugv:
+        role = group["role"].iloc[0]
+        line = plt.plot(group['x'], group['y'], marker='o', linestyle='-', ms=1,
+                 label=role, color='#cf7073')
+        data_linewidth_plot(group['x'], group['y'], marker=None, linestyle='-', linewidth=communication_range, color=line[0].get_color(), label=None, alpha=0.1)
     
 
     # Mostrando legenda. As duas primeiras linhas garantem que não vão ter elementos repetidos na legenda
@@ -182,6 +159,36 @@ def main():
 
     # Salvando o gráfico
     plt.savefig(f"path_{timestamp}.png")
+
+class data_linewidth_plot():
+    def __init__(self, x, y, **kwargs):
+        self.ax = kwargs.pop("ax", plt.gca())
+        self.fig = self.ax.get_figure()
+        self.lw_data = kwargs.pop("linewidth", 1)
+        self.lw = 1
+        self.fig.canvas.draw()
+
+        self.ppd = 72./self.fig.dpi
+        self.trans = self.ax.transData.transform
+        self.linehandle, = self.ax.plot([],[],**kwargs)
+        if "label" in kwargs: kwargs.pop("label")
+        self.line, = self.ax.plot(x, y, **kwargs)
+        self.line.set_color(self.linehandle.get_color())
+        self._resize()
+        self.cid = self.fig.canvas.mpl_connect('draw_event', self._resize)
+
+    def _resize(self, event=None):
+        lw =  ((self.trans((1, self.lw_data))-self.trans((0, 0)))*self.ppd)[1]
+        if lw != self.lw:
+            self.line.set_linewidth(lw)
+            self.lw = lw
+            self._redraw_later()
+
+    def _redraw_later(self):
+        self.timer = self.fig.canvas.new_timer(interval=10)
+        self.timer.single_shot = True
+        self.timer.add_callback(lambda : self.fig.canvas.draw_idle())
+        self.timer.start()
 
 
 if __name__ == "__main__":
