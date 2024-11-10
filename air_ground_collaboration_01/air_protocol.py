@@ -7,7 +7,7 @@ from gradysim.protocol.messages.communication import BroadcastMessageCommand
 from gradysim.protocol.messages.telemetry import Telemetry
 from gradysim.protocol.plugin.mission_mobility import MissionMobilityPlugin, MissionMobilityConfiguration, LoopMission
 
-from air_ground_collaboration.path_planning.grid_path_planning import GridPathPlanning
+from path_planning.grid_path_planning import GridPathPlanning
 
 from typing import List, Tuple, Dict
 import json
@@ -31,7 +31,7 @@ class AirProtocol(IProtocol):
         self.sensors = []
         self.path_planning = GridPathPlanning()
         self.mission_plan = MissionMobilityPlugin(self, MissionMobilityConfiguration(
-            loop_mission=LoopMission.NO,
+            loop_mission=LoopMission.RESTART,
             speed=10
         ))
         
@@ -116,6 +116,8 @@ class AirProtocol(IProtocol):
                 self.received_sensor += 1
             elif msg["type"] == "uav_message":
                 if self.sensors != []:
+                    ugv_id = msg["id"]
+                    logging.info(f"Found UGV {ugv_id}")
                     #pos_list = self.sensors.pop()
                     pos_list = []
                     i_x = self.position[0]
@@ -156,13 +158,13 @@ class AirProtocol(IProtocol):
 
         d_mag = math.sqrt(dx / math.pow(dx, 2) + math.pow(dy, 2))
 
-        dx_hat = dx / d_mag
-        dy_hat = dy / d_mag
+        #dx_hat = dx / d_mag
+        #dy_hat = dy / d_mag
         
-        tl = (-50 - initial_y) / dy
-        tr = (50 - initial_y) / dy
+        #tl = (-50 - initial_y) / dy
+        #tr = (50 - initial_y) / dy
         tb = (-50 - initial_x) / dx
-        tt = (50 - initial_x) / dx
+        #tt = (50 - initial_x) / dx
         
         dir_x = initial_x + tb * dx
         dir_y = initial_y + tb * dy

@@ -1,4 +1,4 @@
-from air_ground_collaboration.path_planning.uav_path_planning_interface import IUAVPathPlanning
+from path_planning.uav_path_planning_interface import IUAVPathPlanning
 
 class GridPathPlanning(IUAVPathPlanning):
 

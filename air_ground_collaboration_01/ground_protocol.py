@@ -9,6 +9,12 @@ from gradysim.protocol.plugin.mission_mobility import MissionMobilityPlugin, Mis
 from typing import List, Tuple, Dict
 import json
 from tabulate import tabulate
+'''
+mission_list3 = [
+            [(50, -30, 0)],
+            [(50, 45, 0)]
+        ]
+'''
 
 class GroundProtocol(IProtocol):
     sent: int
@@ -18,6 +24,11 @@ class GroundProtocol(IProtocol):
     received_directions: List[Tuple]
     mission_plan: MissionMobilityPlugin
     id: int
+    initial_mission_point: int
+
+    #def __init__(self, **kwargs):
+        #print("KWARGS INIT ", kwargs)
+        #self.initial_mission_point = kwargs.get("initial_mission_point")
 
     def initialize(self):
         self.sent = 0
@@ -27,9 +38,9 @@ class GroundProtocol(IProtocol):
         self.received_directions = []
         self.id = self.provider.get_id()
         self.got_all = False
+        self.initial_mission_point = self.provider.get_kwargs().get("initial_mission_point")
         self.mission_list = [
-            [(50, -30, 0)],
-            [(50, 50, 0)]
+            [self.initial_mission_point],
         ]
         
         self.mission_plan = MissionMobilityPlugin(self, MissionMobilityConfiguration(
@@ -69,22 +80,25 @@ class GroundProtocol(IProtocol):
                 self.provider.send_communication_command(command)
             elif msg["type"] == "sensor_direction":
                 if msg["directions"] != []:
-                    self.received_directions.append(msg["directions"])
+                    d = msg["directions"]
+                    logging.info(f"Received message of UAV with directions: {d}")
                     self.received_uav += 1
                     dir = [tuple(sublist[1]) for sublist in msg["directions"]]
                     mission_list2 = [
                         dir
                     ]
-                    self.mission_plan.stop_mission()
+                    #self.mission_plan.stop_mission()
                     self.start_mission(mission_list2)
+                    self.received_directions.append(msg["directions"])
             elif msg["type"] == "sensor_message":
                 self.received_sensor += 1
                 self.check_duplicates(msg["id"])
-                if len(self.db_sensor) == 3 and not self.got_all:
+                if len(self.db_sensor) == 10 and not self.got_all:
                     self.got_all = True
                     self.end = self.provider.current_time()
                     length = self.end - self.start
                     print("It took", length, "seconds!")
+                    logging.info("It took", length, "seconds!")
     
     def check_duplicates(self, id):
         for i in self.db_sensor:
