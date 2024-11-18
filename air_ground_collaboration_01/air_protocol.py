@@ -32,7 +32,7 @@ class AirProtocol(IProtocol):
         self.path_planning = GridPathPlanning()
         self.mission_plan = MissionMobilityPlugin(self, MissionMobilityConfiguration(
             loop_mission=LoopMission.RESTART,
-            speed=10
+            speed=5
         ))
         
         self.provider.schedule_timer(
@@ -156,7 +156,7 @@ class AirProtocol(IProtocol):
         dx = x - initial_x
         dy = y - initial_y
 
-        d_mag = math.sqrt(dx / math.pow(dx, 2) + math.pow(dy, 2))
+        #d_mag = math.sqrt(dx / math.pow(dx, 2) + math.pow(dy, 2))
 
         #dx_hat = dx / d_mag
         #dy_hat = dy / d_mag

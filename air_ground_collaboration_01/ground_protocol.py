@@ -1,5 +1,4 @@
 import logging
-import random
 
 from gradysim.protocol.interface import IProtocol
 from gradysim.protocol.messages.communication import BroadcastMessageCommand
@@ -25,12 +24,10 @@ class GroundProtocol(IProtocol):
     mission_plan: MissionMobilityPlugin
     id: int
     initial_mission_point: int
-
-    #def __init__(self, **kwargs):
-        #print("KWARGS INIT ", kwargs)
-        #self.initial_mission_point = kwargs.get("initial_mission_point")
+    poi_num: int
 
     def initialize(self):
+        self.time_poi = -1
         self.sent = 0
         self.received_sensor = 0
         self.received_uav = 0
@@ -39,12 +36,16 @@ class GroundProtocol(IProtocol):
         self.id = self.provider.get_id()
         self.got_all = False
         self.initial_mission_point = self.provider.get_kwargs().get("initial_mission_point")
+        self.poi_num = self.provider.get_kwargs().get("poi_num")
+        self.ugv_num = self.provider.get_kwargs().get("ugv_num")
+        self.uav_num = self.provider.get_kwargs().get("uav_num")
+        self.sensor_num = self.provider.get_kwargs().get("sensor_num")
         self.mission_list = [
             [self.initial_mission_point],
         ]
         
         self.mission_plan = MissionMobilityPlugin(self, MissionMobilityConfiguration(
-            loop_mission=LoopMission.NO, 
+            loop_mission=LoopMission.RESTART, 
             speed=1,
             tolerance=0.0
         ))
@@ -93,12 +94,12 @@ class GroundProtocol(IProtocol):
             elif msg["type"] == "sensor_message":
                 self.received_sensor += 1
                 self.check_duplicates(msg["id"])
-                if len(self.db_sensor) == 10 and not self.got_all:
+                if len(self.db_sensor) == self.poi_num and not self.got_all:
                     self.got_all = True
                     self.end = self.provider.current_time()
                     length = self.end - self.start
-                    print("It took", length, "seconds!")
-                    logging.info("It took", length, "seconds!")
+                    self.time_poi = length
+                    self.provider.set_kwargs("time_poi", length)
     
     def check_duplicates(self, id):
         for i in self.db_sensor:
@@ -112,10 +113,12 @@ class GroundProtocol(IProtocol):
             self.mission_plan.start_mission(ml2)
     
     def handle_telemetry(self, telemetry: Telemetry):
-        self.position = telemetry.current_position
+        pass
+        #self.position = telemetry.current_position
     
 
     def finish(self):
+        '''
         print("\n  Directions received from UAV")
         headers = ['id', 'x', 'y', 'z']
         table_data = []
@@ -128,5 +131,6 @@ class GroundProtocol(IProtocol):
         print(tabulate(table_data, headers=headers, tablefmt='grid'))
 
         print("\nSensor messages received by UGV= ", self.db_sensor)
+        '''
         #logging.info(f"Final counter values: "
                      #f"received_uav={self.received_uav} ; received_dir={received_directions_tb} ; received_sensor={self.received_sensor} ; db_sensor={self.db_sensor}")

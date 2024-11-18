@@ -11,14 +11,20 @@ import datetime
 import matplotlib.pyplot as plt
 from data_line_width_plot import data_linewidth_plot
 import math
+import sys
+import csv
 
 # Metric variables
-communication_range = 10
+communication_range = int(sys.argv[5])
 
 # Scenario variables
-ugv_num = 1
-sensor_num = 3
-uav_num = 1
+ugv_num = int(sys.argv[2])
+sensor_num = int(sys.argv[4])
+uav_num = int(sys.argv[3])
+
+generate_graph = int(sys.argv[6])
+csv_name = sys.argv[7]
+
 
 def main():
     config = SimulationConfiguration(
@@ -56,13 +62,8 @@ def main():
             gx = 100 / a
             gx = gx - 50
         ugv_ids.append(
-            builder.add_node(GroundProtocol, (-50, -50, 0), initial_mission_point=(gx, gy, 0))
+            builder.add_node(GroundProtocol, (-50, -50, 0), initial_mission_point=(gx, gy, 0), poi_num=sensor_num, ugv_num=ugv_num, uav_num=uav_num, sensor_num=sensor_num, time_poi=-1)
         )
-    '''
-    ugv_ids.append(
-        builder.add_node(GroundProtocol, (-50, -50, 0), initial_mission_point=(50, 45, 0))
-    )
-    '''
     
     # UAV
     uav_id = builder.add_node(AirProtocol, (-50, -50, 2))
@@ -110,6 +111,7 @@ def main():
 
         for ugv_id in ugv_ids:
             ugv_position = simulation.get_node(ugv_id).position
+            time_poi = simulation.get_node(ugv_id).kwargs
             positions_ugv.append({
                 "role": "ugv",
                 "agent": ugv_id,
@@ -117,60 +119,90 @@ def main():
                 "x": ugv_position[0],
                 "y": ugv_position[1],
                 "z": ugv_position[2],
+                "time_poi": time_poi["time_poi"]
             })
-
-    import pandas as pd
-    import seaborn as sns
-    import matplotlib.pyplot as plt
-
-    position_uav_df = pd.DataFrame.from_records(positions_uav)
-    position_ugv_df = pd.DataFrame.from_records(positions_ugv)
-    position_uav_df = position_uav_df.set_index("timestamp")
-    position_ugv_df = position_ugv_df.set_index("timestamp")
-    sensor_df = pd.DataFrame.from_records(sensor_positions)
-
-    sns.set_theme()
-    sns.set_context("talk")
-    sns.set_style("whitegrid")
-    fig, ax = plt.subplots(figsize=(12, 12))
     
-    sns.scatterplot(data=sensor_df, x="x", y="y", ax=ax, marker='x', color='black',
-                    label='sensors', s=100, linewidth=2)
-    for line in range(0,sensor_df.shape[0]):
-        plt.text(
-            sensor_df["x"][line]+1.5,
-            sensor_df["y"][line]+0.5,
-            sensor_df["group"][line],
-            ha='left',
-            weight='normal'
-     )
     
-    grouped_uav = position_uav_df.groupby("agent")
-    grouped_ugv = position_ugv_df.groupby("agent")
-    
-    for name, group in grouped_uav:
-        role = group["role"].iloc[0]
-        agent = group["agent"].iloc[0]
-        s = role + ' ' + str(agent)
-        plt.plot(group['x'], group['y'], marker='o', linestyle='-', ms=1,
-                 label=s, color='#bad1f720')
-    
-    for name, group in grouped_ugv:
-        role = group["role"].iloc[0]
-        agent = group["agent"].iloc[0]
-        s = role + ' ' + str(agent)
-        line = plt.plot(group['x'], group['y'], marker='o', linestyle='-', ms=1,
-                 label=s, color='#cf7073' if agent==3 else '#01a049')
-        data_linewidth_plot(group['x'], group['y'], marker=None, linestyle='-', linewidth=communication_range, color=line[0].get_color(), label=None, alpha=0.1)
-    
-    handles, labels = plt.gca().get_legend_handles_labels()
-    by_label = dict(zip(labels, handles))
-    plt.legend(by_label.values(), by_label.keys())
+    print(positions_ugv[-1])
+    print("\n")
+    print(positions_ugv[-2])
+    print("\n")
+    print(positions_ugv[-3])
+    print("\n")
+    print(positions_ugv[-4])
+    print("\n")
 
-    current_datetime = datetime.datetime.now()
-    timestamp = current_datetime.timestamp()
+    bt = math.inf
+    for i in range(ugv_num):
+        tp = positions_ugv[(i+1)*(-1)]["time_poi"]
+        print("==========")
+        print(tp)
+        if tp != -1 and tp < bt:
+            bt = tp
+    if bt == math.inf:
+        bt = -1
 
-    plt.savefig(f"path_{timestamp}.png")
+
+    # CSV
+    with open(f'{csv_name}.csv', mode='a', newline="") as fd:
+        data = [[ugv_num, uav_num, sensor_num, bt]]
+        writer = csv.writer(fd)
+        writer.writerows(data)
+
+    if generate_graph != 0:
+        import pandas as pd
+        import seaborn as sns
+        import matplotlib.pyplot as plt
+
+        position_uav_df = pd.DataFrame.from_records(positions_uav)
+        position_ugv_df = pd.DataFrame.from_records(positions_ugv)
+        position_uav_df = position_uav_df.set_index("timestamp")
+        position_ugv_df = position_ugv_df.set_index("timestamp")
+        sensor_df = pd.DataFrame.from_records(sensor_positions)
+
+        sns.set_theme()
+        sns.set_context("talk")
+        sns.set_style("whitegrid")
+        fig, ax = plt.subplots(figsize=(12, 12))
+        
+        sns.scatterplot(data=sensor_df, x="x", y="y", ax=ax, marker='x', color='black',
+                        label='sensors', s=100, linewidth=2)
+        for line in range(0,sensor_df.shape[0]):
+            plt.text(
+                sensor_df["x"][line]+1.5,
+                sensor_df["y"][line]+0.5,
+                sensor_df["group"][line],
+                ha='left',
+                weight='normal'
+        )
+        
+        grouped_uav = position_uav_df.groupby("agent")
+        grouped_ugv = position_ugv_df.groupby("agent")
+        
+        for name, group in grouped_uav:
+            role = group["role"].iloc[0]
+            agent = group["agent"].iloc[0]
+            s = role + ' ' + str(agent)
+            plt.plot(group['x'], group['y'], marker='o', linestyle='-', ms=1,
+                    label=s, color='#bad1f720')
+        
+        for name, group in grouped_ugv:
+            role = group["role"].iloc[0]
+            agent = group["agent"].iloc[0]
+            s = role + ' ' + str(agent)
+            line = plt.plot(group['x'], group['y'], marker='o', linestyle='-', ms=1,
+                    label=s, color='#cf7073' if agent==3 else '#01a049')
+            data_linewidth_plot(group['x'], group['y'], marker=None, linestyle='-', linewidth=communication_range, color=line[0].get_color(), label=None, alpha=0.1)
+        
+        handles, labels = plt.gca().get_legend_handles_labels()
+        by_label = dict(zip(labels, handles))
+        plt.legend(by_label.values(), by_label.keys())
+
+        current_datetime = datetime.datetime.now()
+        timestamp = current_datetime.timestamp()
+
+        plt.savefig(f"path_{timestamp}.png")
+    
 
 
 if __name__ == "__main__":

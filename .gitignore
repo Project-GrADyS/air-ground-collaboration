@@ -84,6 +84,8 @@ ipython_config.py
 
 # Simulator graphs
 path*.png
+*.csv
+*.txt
 
 # pyenv
 #   For a library or package, you might want to ignore these files since the code is
