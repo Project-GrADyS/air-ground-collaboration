@@ -193,7 +193,7 @@ class AirProtocol(IProtocol):
         self.position = telemetry.current_position
 
     def finish(self):
-        print(f"Final counter values: "
-                     f"received_sensor={self.sensors}")
+        #print(f"Final counter values: "
+                     #f"received_sensor={self.sensors}")
         logging.info(f"Final counter values: "
                      f"received_sensor={self.sensors}")

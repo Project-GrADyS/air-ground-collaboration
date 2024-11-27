@@ -5,12 +5,13 @@ from data_line_width_plot import data_linewidth_plot
 
 class PlotPath:
 
-    def __init__(self, positions_uav, positions_ugv, sensor_positions, communication_range, plot_path):
+    def __init__(self, positions_uav, positions_ugv, sensor_positions, communication_range, plot_path, color_list):
         self.positions_uav = positions_uav
         self.positions_ugv = positions_ugv
         self.sensor_positions = sensor_positions
         self.communication_range = communication_range
         self.plot_path = plot_path
+        self.color_list = color_list
 
     def plot_graph(self):
 
@@ -46,13 +47,15 @@ class PlotPath:
             plt.plot(group['x'], group['y'], marker='o', linestyle='-', ms=1,
                     label=s, color='#bad1f720')
 
+        pos = 0
         for name, group in grouped_ugv:
             role = group["role"].iloc[0]
             agent = group["agent"].iloc[0]
             s = role + ' ' + str(agent)
             line = plt.plot(group['x'], group['y'], marker='o', linestyle='-', ms=1,
-                    label=s, color='#cf7073' if agent==3 else '#01a049')
+                    label=s, color=self.color_list[pos])
             data_linewidth_plot(group['x'], group['y'], marker=None, linestyle='-', linewidth=self.communication_range, color=line[0].get_color(), label=None, alpha=0.1)
+            pos += 1
 
         handles, labels = plt.gca().get_legend_handles_labels()
         by_label = dict(zip(labels, handles))

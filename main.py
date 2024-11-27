@@ -28,6 +28,8 @@ csv_name = sys.argv[7]
 csv_path = sys.argv[8]
 experiment_num = sys.argv[1]
 
+color_list = ['#cf7073', '#01a049', "#00008a", "#efbf04", "#8a00c4"]
+
 def main():
     config = SimulationConfiguration(
         duration=2000,
@@ -98,6 +100,8 @@ def main():
             "group": sensor_id
         })
     
+    initial_time = simulation._current_timestamp
+
     while simulation.step_simulation():
         current_time = simulation._current_timestamp
 
@@ -131,26 +135,18 @@ def main():
             bt = tp
     if bt == math.inf:
         bt = -1
-    
-
-    # TXT
-    '''
-    with open(f"logs/{csv_name}_{experiment_num}.py", mode='w', newline="") as fd:
-        fd.write(f"positions_uav={positions_uav}")
-        fd.write(f"positions_ugv={positions_ugv}")
-        fd.write(f"sensor_positions={sensor_positions}")
-    '''
-
-
-    # CSV
-    with open(f'{csv_path}/{csv_name}.csv', mode='a', newline="") as fd:
-        data = [[experiment_num, ugv_num, uav_num, sensor_num, bt]]
-        writer = csv.writer(fd)
-        writer.writerows(data)
 
     if generate_graph != 0:
-        plot_path = my_path + f"/graph_images/{csv_name}_{experiment_num}.png"
-        PlotPath(positions_uav, positions_ugv, sensor_positions, communication_range, plot_path).plot_graph()
+        plot_path = my_path + f"/graph_images/{csv_name}_exp{experiment_num}.png"
+        PlotPath(positions_uav, positions_ugv, sensor_positions, communication_range, plot_path, color_list).plot_graph()
+    
+    end_time = simulation._current_timestamp
+    
+    # CSV
+    with open(f'{csv_path}/{csv_name}.csv', mode='a', newline="") as fd:
+        data = [[experiment_num, ugv_num, uav_num, sensor_num, bt, end_time - initial_time]]
+        writer = csv.writer(fd)
+        writer.writerows(data)
     
 if __name__ == "__main__":
     main()

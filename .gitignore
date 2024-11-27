@@ -83,7 +83,7 @@ profile_default/
 ipython_config.py
 
 # Simulator graphs
-path*.png
+*.png
 *.csv
 *.txt
 
