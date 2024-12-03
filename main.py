@@ -4,7 +4,7 @@ from air_ground_collaboration_01.sensor_protocol import SensorProtocol
 from gradysim.simulator.handler.communication import CommunicationMedium, CommunicationHandler
 from gradysim.simulator.handler.mobility import MobilityHandler
 from gradysim.simulator.handler.timer import TimerHandler
-from gradysim.simulator.handler.visualization import VisualizationHandler
+#from gradysim.simulator.handler.visualization import VisualizationHandler
 from gradysim.simulator.simulation import SimulationBuilder, SimulationConfiguration
 from random import uniform
 from graphs.plot_path import PlotPath
@@ -82,7 +82,7 @@ def main():
 
     builder.add_handler(MobilityHandler())
 
-    builder.add_handler(VisualizationHandler())
+    #builder.add_handler(VisualizationHandler())
 
     simulation = builder.build()
 
@@ -137,14 +137,14 @@ def main():
         bt = -1
 
     if generate_graph != 0:
-        plot_path = my_path + f"/graph_images/{csv_name}_exp{experiment_num}.png"
+        plot_path = f"{my_path}/graph_images/{csv_name}_exp{experiment_num}.png"
         PlotPath(positions_uav, positions_ugv, sensor_positions, communication_range, plot_path, color_list).plot_graph()
     
     end_time = simulation._current_timestamp
     
     # CSV
     with open(f'{csv_path}/{csv_name}.csv', mode='a', newline="") as fd:
-        data = [[experiment_num, ugv_num, uav_num, sensor_num, bt, end_time - initial_time]]
+        data = [[experiment_num, ugv_num, uav_num, sensor_num, communication_range, bt, end_time - initial_time]]
         writer = csv.writer(fd)
         writer.writerows(data)
     
