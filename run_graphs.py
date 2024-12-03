@@ -26,14 +26,14 @@ combined_df = pd.concat(dataframes, ignore_index=True)
 print(combined_df)
 
 # Bar plot range x time
-
+'''
 plt.bar(combined_df["comm_range"], combined_df["time_poi"])
 plt.xlabel("Communication Range")
 plt.ylabel("Time to find all PoI")
 plt.savefig(f"{my_path}/analysis/{csv_prefix}_range_time.png")
-
+'''
 # Bar plot numUGV x time
-
+'''
 grouped_ugv = combined_df.groupby("ugv_num")["time_poi"].mean().reset_index()
 
 sns.barplot(grouped_ugv, x="ugv_num", y="time_poi", hue="ugv_num", palette='crest')
@@ -41,7 +41,11 @@ plt.xlabel("Number of UGVs")
 plt.ylabel("Average Time to find all PoI")
 plt.savefig(f"{my_path}/analysis/{csv_prefix}_ugv_time.png")
 
+
+'''
 # Bar plot numSensors x time
+
+print(combined_df)
 
 grouped_sensor = combined_df.groupby("sensor_num")["time_poi"].mean().reset_index()
 

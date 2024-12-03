@@ -34,7 +34,7 @@ class GroundProtocol(IProtocol):
         self.db_sensor = []
         self.received_directions = []
         self.id = self.provider.get_id()
-        self.got_all = False
+        self.got_all = self.provider.get_kwargs().get("got_all")
         self.initial_mission_point = self.provider.get_kwargs().get("initial_mission_point")
         self.poi_num = self.provider.get_kwargs().get("poi_num")
         self.ugv_num = self.provider.get_kwargs().get("ugv_num")
@@ -95,11 +95,12 @@ class GroundProtocol(IProtocol):
                 self.received_sensor += 1
                 self.check_duplicates(msg["id"])
                 if len(self.db_sensor) == self.poi_num and not self.got_all:
-                    self.got_all = True
                     self.end = self.provider.current_time()
                     length = self.end - self.start
                     self.time_poi = length
                     self.provider.set_kwargs("time_poi", length)
+                    self.provider.set_kwargs("got_all", True)
+                    self.got_all = True
     
     def check_duplicates(self, id):
         for i in self.db_sensor:

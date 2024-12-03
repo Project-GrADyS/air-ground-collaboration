@@ -66,7 +66,7 @@ def main():
             gx = 100 / a
             gx = gx - 50
         ugv_ids.append(
-            builder.add_node(GroundProtocol, (-50, -50, 0), initial_mission_point=(gx, gy, 0), poi_num=sensor_num, ugv_num=ugv_num, uav_num=uav_num, sensor_num=sensor_num, time_poi=-1)
+            builder.add_node(GroundProtocol, (-50, -50, 0), initial_mission_point=(gx, gy, 0), poi_num=sensor_num, ugv_num=ugv_num, uav_num=uav_num, sensor_num=sensor_num, time_poi=-1, got_all=False)
         )
     
     # UAV
@@ -102,31 +102,38 @@ def main():
     
     initial_time = simulation._current_timestamp
 
+    got_all = False
+
     while simulation.step_simulation():
-        current_time = simulation._current_timestamp
+        if got_all:
+            break
+        else:
+            current_time = simulation._current_timestamp
 
-        uav_position = simulation.get_node(uav_id).position
-        positions_uav.append({
-            "role": "uav",
-            "agent": uav_id,
-            "timestamp": current_time,
-            "x": uav_position[0],
-            "y": uav_position[1],
-            "z": uav_position[2],
-        })
-
-        for ugv_id in ugv_ids:
-            ugv_position = simulation.get_node(ugv_id).position
-            time_poi = simulation.get_node(ugv_id).kwargs
-            positions_ugv.append({
-                "role": "ugv",
-                "agent": ugv_id,
+            uav_position = simulation.get_node(uav_id).position
+            positions_uav.append({
+                "role": "uav",
+                "agent": uav_id,
                 "timestamp": current_time,
-                "x": ugv_position[0],
-                "y": ugv_position[1],
-                "z": ugv_position[2],
-                "time_poi": time_poi["time_poi"]
+                "x": uav_position[0],
+                "y": uav_position[1],
+                "z": uav_position[2],
             })
+
+            for ugv_id in ugv_ids:
+                ugv_position = simulation.get_node(ugv_id).position
+                time_poi = simulation.get_node(ugv_id).kwargs
+                positions_ugv.append({
+                    "role": "ugv",
+                    "agent": ugv_id,
+                    "timestamp": current_time,
+                    "x": ugv_position[0],
+                    "y": ugv_position[1],
+                    "z": ugv_position[2],
+                    "time_poi": time_poi["time_poi"]
+                })
+                if simulation.get_node(ugv_id).kwargs["got_all"]:
+                    got_all = True
     
     bt = math.inf
     for i in range(ugv_num):

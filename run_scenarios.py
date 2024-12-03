@@ -2,16 +2,16 @@ import subprocess
 import csv
 import time
 
-num_experiments = 2
+num_experiments = 1
 
 args = {
-    "ugv_num": ["2", "3", "5"],
+    "ugv_num": ["2", "3"],
     "uav_num": "1",
-    "sensor_num": ["3", "5", "6"],
-    "communication_range": ["5", "10"],
-    "generate_graph": 0,
+    "sensor_num": ["3"],
+    "communication_range": ["5"],
+    "generate_graph": 1,
     "csv_path": "experiments",
-    "csv_name": "test2"
+    "csv_name": "test4"
 }
 
 
