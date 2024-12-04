@@ -5,11 +5,11 @@ import time
 num_experiments = 1
 
 args = {
-    "ugv_num": ["2", "3"],
+    "ugv_num": ["5"],
     "uav_num": "1",
-    "sensor_num": ["3"],
+    "sensor_num": ["10"],
     "communication_range": ["5"],
-    "generate_graph": 1,
+    "generate_graph": 0,
     "csv_path": "experiments",
     "csv_name": "test4"
 }
