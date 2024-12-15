@@ -7,7 +7,7 @@ from gradysim.protocol.messages.communication import BroadcastMessageCommand
 from gradysim.protocol.messages.telemetry import Telemetry
 from gradysim.protocol.plugin.mission_mobility import MissionMobilityPlugin, MissionMobilityConfiguration, LoopMission
 
-from path_planning.grid_path_planning import GridPathPlanning
+#from path_planning.grid_path_planning import GridPathPlanning
 
 from typing import List, Tuple, Dict
 import json
@@ -21,6 +21,7 @@ class AirProtocol(IProtocol):
     sensors: List
     mission_plan: MissionMobilityPlugin
     ugv_db: List[int]
+    path_planning: List[List[int]]
     
     def initialize(self):
         self.sent = 0
@@ -29,7 +30,8 @@ class AirProtocol(IProtocol):
         self.received_ugv = 0
         self.position = Tuple[float, float, float]
         self.sensors = []
-        self.path_planning = GridPathPlanning()
+        self.path_planning = self.provider.get_kwargs().get("mission")
+        self.length = self.provider.get_kwargs().get("length")
         self.mission_plan = MissionMobilityPlugin(self, MissionMobilityConfiguration(
             loop_mission=LoopMission.RESTART,
             speed=5
@@ -44,51 +46,9 @@ class AirProtocol(IProtocol):
             "message",  
             self.provider.current_time() + 1  
         )
-
-    '''
-    
-    def generate_mission_section(self, start_x, start_y, end_x, end_y, step, substep):
-        mission_section = []
-        x = start_x
-        y = start_y
-        limit_y = start_y - substep
-        limit_x = start_x
-
-        mission_section.append([start_x, start_y, 2])
-        
-        for i in range(18):
-            if i % 2 == 0:
-                if x < end_x:
-                    x += step
-                mission_section.append([x, limit_y, 2])
-            else:
-                if y <= end_y:
-                    y += step
-                else:
-                    limit_x += 10
-                mission_section.append([limit_x, y, 2])
-
-        mission_section.append([end_x, end_y, 2])
-        mission_section.append([-50, -50, 2])
-    
-        return mission_section
-
-    def define_mission(self):
-        mission_sublist = []
-        
-        # Generate mission sections
-        mission_sublist += self.generate_mission_section(-50, -50, 0, -17, 7, 4)
-        mission_sublist += self.generate_mission_section(0, -50, 50, -17, 7, 4)
-        mission_sublist += self.generate_mission_section(-50, -17, 0, 17, 7, 4)
-        mission_sublist += self.generate_mission_section(0, -17, 50, 17, 7, 4)
-        mission_sublist += self.generate_mission_section(-50, 17, 0, 50, 7, 4)
-        mission_sublist += self.generate_mission_section(0, 17, 50, 50, 7, 4)
-        
-        return [mission_sublist]
-    '''
             
     def start_mission(self):
-        mission_list = self.path_planning.define_mission()
+        mission_list = self.path_planning
         if not (mission_list == []):
             self.mission_plan.start_mission(mission_list.pop())
 
@@ -125,7 +85,7 @@ class AirProtocol(IProtocol):
                     received_sensor_ugv = msg["received_sensor"]
                     for s in self.sensors:
                         if s[0] not in received_sensor_ugv:
-                            pos = self.calculate_direction(s[1][0], s[1][1], s[1][2], 100, i_x, i_y)
+                            pos = self.calculate_direction(s[1][0], s[1][1], s[1][2], self.length, i_x, i_y)
                             i_x = pos[0]
                             i_y = pos[1]
                             pos_list.append([s[0], pos])
@@ -156,19 +116,12 @@ class AirProtocol(IProtocol):
         dx = x - initial_x
         dy = y - initial_y
 
-        #d_mag = math.sqrt(dx / math.pow(dx, 2) + math.pow(dy, 2))
+        half_length = length//2
 
-        #dx_hat = dx / d_mag
-        #dy_hat = dy / d_mag
-        
-        #tl = (-50 - initial_y) / dy
-        #tr = (50 - initial_y) / dy
-        tb = (-50 - initial_x) / dx
-        #tt = (50 - initial_x) / dx
+        tb = (-1* half_length - initial_x) / dx
         
         dir_x = initial_x + tb * dx
         dir_y = initial_y + tb * dy
-        dir_y = 50
 
         theta = math.atan2(y - initial_y, x - initial_x)
 
@@ -176,16 +129,34 @@ class AirProtocol(IProtocol):
             #Move in the Y direction
             if x > initial_x:
                 dir_x = x + 1
+                if dir_x > half_length:
+                    dir_x = half_length
             else:
                 dir_x = x - 1
+                if dir_x < half_length:
+                    dir_x = -1 * half_length
             dir_y = initial_y + (dir_x - initial_x) * math.tan(theta)
         else:
             #Move in the X direction
             if y > initial_y:
                 dir_y = y + 1
+                if dir_y > half_length:
+                    dir_y = half_length
             else:
                 dir_y = y - 1
+                if dir_y < half_length:
+                    dir_y = -1 * half_length
             dir_x = initial_x + (dir_y - initial_x ) / math.tan(theta)
+
+        if dir_x > 0 and dir_x > half_length:
+            dir_x = half_length
+        elif dir_x < 0 and dir_x < (-1* half_length):
+            dir_x = -1* half_length
+        
+        if dir_y > 0 and dir_y > half_length:
+                dir_x = half_length
+        elif dir_y < 0 and dir_y < (-1* half_length):
+            dir_y = -1* half_length
 
         return (dir_x, dir_y, z)
 
@@ -193,7 +164,5 @@ class AirProtocol(IProtocol):
         self.position = telemetry.current_position
 
     def finish(self):
-        #print(f"Final counter values: "
-                     #f"received_sensor={self.sensors}")
         logging.info(f"Final counter values: "
                      f"received_sensor={self.sensors}")

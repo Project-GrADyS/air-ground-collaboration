@@ -8,12 +8,6 @@ from gradysim.protocol.plugin.mission_mobility import MissionMobilityPlugin, Mis
 from typing import List, Tuple, Dict
 import json
 from tabulate import tabulate
-'''
-mission_list3 = [
-            [(50, -30, 0)],
-            [(50, 45, 0)]
-        ]
-'''
 
 class GroundProtocol(IProtocol):
     sent: int
@@ -59,12 +53,6 @@ class GroundProtocol(IProtocol):
         if timer == "mobility":
             self.start_mission(ml=self.mission_list)
             self.start = self.provider.current_time()
-            '''
-            self.provider.schedule_timer(
-            "mobility",  
-            self.provider.current_time() + 1
-            )
-            '''
 
     def handle_packet(self, message: str):
         msg = json.loads(message)

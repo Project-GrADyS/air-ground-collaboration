@@ -4,8 +4,9 @@ from air_ground_collaboration_01.sensor_protocol import SensorProtocol
 from gradysim.simulator.handler.communication import CommunicationMedium, CommunicationHandler
 from gradysim.simulator.handler.mobility import MobilityHandler
 from gradysim.simulator.handler.timer import TimerHandler
-#from gradysim.simulator.handler.visualization import VisualizationHandler
+#from gradysim.simulator.handler.visualization import VisualizationHandler, VisualizationConfiguration
 from gradysim.simulator.simulation import SimulationBuilder, SimulationConfiguration
+from path_planning.grid_path_planning import GridPathPlanning
 from random import uniform
 from graphs.plot_path import PlotPath
 import math
@@ -22,29 +23,33 @@ communication_range = int(sys.argv[5])
 ugv_num = int(sys.argv[2])
 sensor_num = int(sys.argv[4])
 uav_num = int(sys.argv[3])
+map_size = int(sys.argv[9])
 
 generate_graph = int(sys.argv[6])
 csv_name = sys.argv[7]
 csv_path = sys.argv[8]
 experiment_num = sys.argv[1]
 
-color_list = ['#cf7073', '#01a049', "#00008a", "#efbf04", "#8a00c4"]
+color_list = ['#cf7073', '#01a049', "#00008a", "#efbf04", "#8a00c4", "#ffa600"]
 
 def main():
     config = SimulationConfiguration(
-        duration=2000,
+        duration=2500,
         execution_logging=False,
         #log_file="logs/log.txt"
     )
     builder = SimulationBuilder(config)
 
     ugv_ids: list[int] = []
+    uav_ids: list[int] = []
     sensor_ids: list[int] = []
+
+    ms = map_size / 2
     
     #Sensor
     for _ in range(sensor_num):
-        sx = uniform(-50, 50)
-        sy = uniform(-50, 50)
+        sx = uniform(-1 * ms, ms)
+        sy = uniform(-1 * ms, ms)
         sensor_ids.append(
             builder.add_node(SensorProtocol, (sx, sy, 0))
         )
@@ -55,22 +60,26 @@ def main():
     for i in range(ugv_num):
         a = (i+1) * math.tan(math.radians(angle))
         if a < 1:
-            gx = 50
-            gy = 100 * a
-            gy = gy - 50
+            gx = ms
+            gy = map_size * a
+            gy = gy - ms
         elif a == 1:
-            gx = 50
-            gy = 50
+            gx = ms
+            gy = ms
         else:
-            gy = 50
-            gx = 100 / a
-            gx = gx - 50
+            gy = ms
+            gx = map_size / a
+            gx = gx - ms
         ugv_ids.append(
-            builder.add_node(GroundProtocol, (-50, -50, 0), initial_mission_point=(gx, gy, 0), poi_num=sensor_num, ugv_num=ugv_num, uav_num=uav_num, sensor_num=sensor_num, time_poi=-1, got_all=False)
+            builder.add_node(GroundProtocol, (-1 * ms, -1 * ms, 0), initial_mission_point=(gx, gy, 0), poi_num=sensor_num, ugv_num=ugv_num, uav_num=uav_num, sensor_num=sensor_num, time_poi=-1, got_all=False)
         )
     
     # UAV
-    uav_id = builder.add_node(AirProtocol, (-50, -50, 2))
+    mission = GridPathPlanning(size=map_size, uav_num=uav_num).define_mission()
+    for i in range(uav_num):
+        uav_ids.append(
+            builder.add_node(AirProtocol, (-1 * ms, -1 * ms, 2), mission=mission[i], length=map_size)
+        )
     
 
     builder.add_handler(TimerHandler())
@@ -82,7 +91,9 @@ def main():
 
     builder.add_handler(MobilityHandler())
 
-    #builder.add_handler(VisualizationHandler())
+    #conf = VisualizationConfiguration(x_range=(-100,-100), y_range=(-100,-100))
+
+    #builder.add_handler(VisualizationHandler(configuration=conf))
 
     simulation = builder.build()
 
@@ -103,22 +114,29 @@ def main():
     initial_time = simulation._current_timestamp
 
     got_all = False
+    last_second = 0
 
     while simulation.step_simulation():
         if got_all:
             break
         else:
             current_time = simulation._current_timestamp
+             
+            # Para não sobrecarregar o simulador
+            if current_time - last_second < 0.1:
+                continue
 
-            uav_position = simulation.get_node(uav_id).position
-            positions_uav.append({
-                "role": "uav",
-                "agent": uav_id,
-                "timestamp": current_time,
-                "x": uav_position[0],
-                "y": uav_position[1],
-                "z": uav_position[2],
-            })
+            last_second = current_time
+            for uav_id in uav_ids:
+                uav_position = simulation.get_node(uav_id).position
+                positions_uav.append({
+                    "role": "uav",
+                    "agent": uav_id,
+                    "timestamp": current_time,
+                    "x": uav_position[0],
+                    "y": uav_position[1],
+                    "z": uav_position[2],
+                })
 
             for ugv_id in ugv_ids:
                 ugv_position = simulation.get_node(ugv_id).position
@@ -145,7 +163,7 @@ def main():
 
     if generate_graph != 0:
         plot_path = f"{my_path}/graph_images/{csv_name}_exp{experiment_num}.png"
-        PlotPath(positions_uav, positions_ugv, sensor_positions, communication_range, plot_path, color_list).plot_graph()
+        PlotPath(positions_uav, positions_ugv, sensor_positions, communication_range, plot_path).plot_graph()
     
     end_time = simulation._current_timestamp
     

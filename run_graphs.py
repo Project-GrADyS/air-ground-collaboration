@@ -56,5 +56,16 @@ plt.ylabel("Average Time to find all PoI")
 plt.savefig(f"{my_path}/analysis/{csv_prefix}_sensor_time.png")
 plt.clf()
 
+# Bar plot numUAV x time
+
+grouped_uav = combined_df.groupby("uav_num")["time_poi"].mean().reset_index()
+
+sns.barplot(grouped_uav, x="uav_num", y="time_poi", hue="uav_num", palette='crest')
+plt.xlabel("Number of UAVs")
+plt.ylabel("Average Time to find all PoI")
+plt.savefig(f"{my_path}/analysis/{csv_prefix}_uav_time.png")
+plt.clf()
+
+
 
 
