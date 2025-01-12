@@ -12,7 +12,7 @@ from typing import List, Tuple, Dict
 import json
 
 
-class SensorProtocol(IProtocol):
+class PoIProtocol(IProtocol):
     sent: int
     position: Tuple
     id: int
@@ -31,7 +31,7 @@ class SensorProtocol(IProtocol):
         if timer == "message":
             self.sent += 1
             msg = {
-                "type": "sensor_message",
+                "type": "poi_message",
                 "id": self.id,
                 "position": self.position,
             }

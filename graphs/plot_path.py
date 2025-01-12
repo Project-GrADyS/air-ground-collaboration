@@ -5,13 +5,13 @@ from graphs.data_line_width_plot import data_linewidth_plot
 
 class PlotPath:
 
-    def __init__(self, positions_uav, positions_ugv, sensor_positions, communication_range, plot_path):
+    def __init__(self, positions_uav, positions_ugv, poi_positions, communication_range, plot_path):
         self.positions_uav = positions_uav
         self.positions_ugv = positions_ugv
-        self.sensor_positions = sensor_positions
+        self.poi_positions = poi_positions
         self.communication_range = communication_range
         self.plot_path = plot_path
-        self.color_list = ['#cf7073', '#01a049', "#00008a", "#efbf04", "#8a00c4", "#ffa600"]
+        self.color_list = ['#cf7073', '#01a049', "#00008a", "#efbf04", "#8a00c4", "#ffa600", "#4bc0ad", "#b25c5c"]
         self.color_list_uav = ['#bad1f720', '#8dfc9120', '#ebde3420']
 
     def plot_graph(self):
@@ -20,20 +20,20 @@ class PlotPath:
         position_ugv_df = pd.DataFrame.from_records(self.positions_ugv)
         position_uav_df = position_uav_df.set_index("timestamp")
         position_ugv_df = position_ugv_df.set_index("timestamp")
-        sensor_df = pd.DataFrame.from_records(self.sensor_positions)
+        poi_df = pd.DataFrame.from_records(self.poi_positions)
 
         sns.set_theme()
         sns.set_context("talk")
         sns.set_style("whitegrid")
         fig, ax = plt.subplots(figsize=(12, 12))
 
-        sns.scatterplot(data=sensor_df, x="x", y="y", ax=ax, marker='x', color='black',
-                        label='sensors', s=100, linewidth=2)
-        for line in range(0,sensor_df.shape[0]):
+        sns.scatterplot(data=poi_df, x="x", y="y", ax=ax, marker='x', color='black',
+                        label='pois', s=100, linewidth=2)
+        for line in range(0,poi_df.shape[0]):
             plt.text(
-                sensor_df["x"][line]+1.5,
-                sensor_df["y"][line]+0.5,
-                sensor_df["group"][line],
+                poi_df["x"][line]+1.5,
+                poi_df["y"][line]+0.5,
+                poi_df["group"][line],
                 ha='left',
                 weight='normal'
         )

@@ -9,6 +9,7 @@ folder_path = "experiments"
 csv_prefix = sys.argv[1]
 column_name = "time_poi"
 dataframes = []
+time_df = []
 
 for file_name in os.listdir(folder_path):
     if file_name.startswith(csv_prefix) and file_name.endswith('.csv'):
@@ -18,12 +19,22 @@ for file_name in os.listdir(folder_path):
         df_filtered = df[df[column_name] != -1]
         df_filtered = df_filtered.drop(columns="experiment")
         df_filtered["time_poi"] = df_filtered[column_name].mean()
-        grouped_df = df_filtered.groupby(['ugv_num', 'uav_num', 'sensor_num', 'comm_range'], as_index=False).mean()
+        grouped_df = df_filtered.groupby(['ugv_num', 'uav_num', 'poi_num', 'comm_range'], as_index=False).mean()
+        time_df.append(df)
         dataframes.append(grouped_df)
     
 
 combined_df = pd.concat(dataframes, ignore_index=True)
-print(combined_df)
+combined_time = pd.concat(time_df, ignore_index=True)
+
+ts = combined_time["time_simulation"].sum()
+h = ts // 3600
+m = (ts % 3600) // 60
+s = ts % 60
+
+print("\n")
+print(f"Total simulation time: {h} hours {m} minutes and {s} seconds")
+print("\n")
 
 # Bar plot range x time
 
@@ -46,14 +57,14 @@ plt.ylabel("Average Time to find all PoI")
 plt.savefig(f"{my_path}/analysis/{csv_prefix}_ugv_time.png")
 plt.clf()
 
-# Bar plot numSensors x time
+# Bar plot numpois x time
 
-grouped_sensor = combined_df.groupby("sensor_num")["time_poi"].mean().reset_index()
+grouped_poi = combined_df.groupby("poi_num")["time_poi"].mean().reset_index()
 
-sns.barplot(grouped_sensor, x="sensor_num", y="time_poi", hue="sensor_num", palette='crest')
-plt.xlabel("Number of Sensors")
+sns.barplot(grouped_poi, x="poi_num", y="time_poi", hue="poi_num", palette='crest')
+plt.xlabel("Number of pois")
 plt.ylabel("Average Time to find all PoI")
-plt.savefig(f"{my_path}/analysis/{csv_prefix}_sensor_time.png")
+plt.savefig(f"{my_path}/analysis/{csv_prefix}_poi_time.png")
 plt.clf()
 
 # Bar plot numUAV x time

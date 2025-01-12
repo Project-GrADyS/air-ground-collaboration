@@ -1,6 +1,6 @@
-from air_ground_collaboration_01.air_protocol import AirProtocol
-from air_ground_collaboration_01.ground_protocol import GroundProtocol
-from air_ground_collaboration_01.sensor_protocol import SensorProtocol
+from air_ground_collaboration_02.air_protocol import AirProtocol
+from air_ground_collaboration_02.ground_protocol import GroundProtocol
+from air_ground_collaboration_02.poi_protocol import PoIProtocol
 from gradysim.simulator.handler.communication import CommunicationMedium, CommunicationHandler
 from gradysim.simulator.handler.mobility import MobilityHandler
 from gradysim.simulator.handler.timer import TimerHandler
@@ -13,6 +13,7 @@ import math
 import sys
 import csv
 import os
+import time
 
 my_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -21,7 +22,7 @@ communication_range = int(sys.argv[5])
 
 # Scenario variables
 ugv_num = int(sys.argv[2])
-sensor_num = int(sys.argv[4])
+poi_num = int(sys.argv[4])
 uav_num = int(sys.argv[3])
 map_size = int(sys.argv[9])
 
@@ -30,11 +31,11 @@ csv_name = sys.argv[7]
 csv_path = sys.argv[8]
 experiment_num = sys.argv[1]
 
-color_list = ['#cf7073', '#01a049', "#00008a", "#efbf04", "#8a00c4", "#ffa600"]
+#color_list = ['#cf7073', '#01a049', "#00008a", "#efbf04", "#8a00c4", "#ffa600"]
 
 def main():
     config = SimulationConfiguration(
-        duration=2500,
+        duration=4000,
         execution_logging=False,
         #log_file="logs/log.txt"
     )
@@ -42,16 +43,16 @@ def main():
 
     ugv_ids: list[int] = []
     uav_ids: list[int] = []
-    sensor_ids: list[int] = []
+    poi_ids: list[int] = []
 
     ms = map_size / 2
     
-    #Sensor
-    for _ in range(sensor_num):
+    #poi
+    for _ in range(poi_num):
         sx = uniform(-1 * ms, ms)
         sy = uniform(-1 * ms, ms)
-        sensor_ids.append(
-            builder.add_node(SensorProtocol, (sx, sy, 0))
+        poi_ids.append(
+            builder.add_node(PoIProtocol, (sx, sy, 0))
         )
     
     # UGV
@@ -71,7 +72,7 @@ def main():
             gx = map_size / a
             gx = gx - ms
         ugv_ids.append(
-            builder.add_node(GroundProtocol, (-1 * ms, -1 * ms, 0), initial_mission_point=(gx, gy, 0), poi_num=sensor_num, ugv_num=ugv_num, uav_num=uav_num, sensor_num=sensor_num, time_poi=-1, got_all=False)
+            builder.add_node(GroundProtocol, (-1 * ms, -1 * ms, 0), initial_mission_point=(gx, gy, 0), poi_num=poi_num, ugv_num=ugv_num, uav_num=uav_num, time_poi=-1, got_all=False)
         )
     
     # UAV
@@ -99,22 +100,22 @@ def main():
 
     positions_uav = []
     positions_ugv = []
-    sensor_positions = []
+    poi_positions = []
 
-    for sensor_id in sensor_ids:
-        sensor_position = simulation.get_node(sensor_id).position
-        sensor_positions.append({
-            "role": "sensor",
-            "x": sensor_position[0],
-            "y": sensor_position[1],
-            "z": sensor_position[2],
-            "group": sensor_id
+    for poi_id in poi_ids:
+        poi_position = simulation.get_node(poi_id).position
+        poi_positions.append({
+            "role": "poi",
+            "x": poi_position[0],
+            "y": poi_position[1],
+            "z": poi_position[2],
+            "group": poi_id
         })
     
-    initial_time = simulation._current_timestamp
-
     got_all = False
     last_second = 0
+
+    initial_time = time.time()
 
     while simulation.step_simulation():
         if got_all:
@@ -163,13 +164,13 @@ def main():
 
     if generate_graph != 0:
         plot_path = f"{my_path}/graph_images/{csv_name}_exp{experiment_num}.png"
-        PlotPath(positions_uav, positions_ugv, sensor_positions, communication_range, plot_path).plot_graph()
-    
-    end_time = simulation._current_timestamp
+        PlotPath(positions_uav, positions_ugv, poi_positions, communication_range, plot_path).plot_graph()
+
+    end_time = time.time()
     
     # CSV
     with open(f'{csv_path}/{csv_name}.csv', mode='a', newline="") as fd:
-        data = [[experiment_num, ugv_num, uav_num, sensor_num, communication_range, bt, end_time - initial_time]]
+        data = [[experiment_num, ugv_num, uav_num, poi_num, communication_range, bt, end_time - initial_time]]
         writer = csv.writer(fd)
         writer.writerows(data)
     

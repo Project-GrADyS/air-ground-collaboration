@@ -13,12 +13,12 @@ from typing import List, Tuple, Dict
 import json
 
 class AirProtocol(IProtocol):
-    sent_sensor: int
-    received_sensor: int
+    sent_poi: int
+    received_poi: int
     received_ugv: int
     sent_ground: int
     position: Tuple
-    sensors: List
+    pois: List
     mission_plan: MissionMobilityPlugin
     ugv_db: List[int]
     path_planning: List[List[int]]
@@ -26,10 +26,10 @@ class AirProtocol(IProtocol):
     def initialize(self):
         self.sent = 0
         self.ugv_db = []
-        self.received_sensor = 0
+        self.received_poi = 0
         self.received_ugv = 0
         self.position = Tuple[float, float, float]
-        self.sensors = []
+        self.pois = []
         self.path_planning = self.provider.get_kwargs().get("mission")
         self.length = self.provider.get_kwargs().get("length")
         self.mission_plan = MissionMobilityPlugin(self, MissionMobilityConfiguration(
@@ -71,28 +71,28 @@ class AirProtocol(IProtocol):
     def handle_packet(self, message: str):
         msg = json.loads(message)
         if msg != '':
-            if msg["type"] == "sensor_message":
+            if msg["type"] == "poi_message":
                 self.check_duplicates(msg["id"], msg["position"])
-                self.received_sensor += 1
+                self.received_poi += 1
             elif msg["type"] == "uav_message":
-                if self.sensors != []:
+                if self.pois != []:
                     ugv_id = msg["id"]
                     logging.info(f"Found UGV {ugv_id}")
-                    #pos_list = self.sensors.pop()
+                    #pos_list = self.pois.pop()
                     pos_list = []
                     i_x = self.position[0]
                     i_y = self.position[1]
-                    received_sensor_ugv = msg["received_sensor"]
-                    for s in self.sensors:
-                        if s[0] not in received_sensor_ugv:
+                    received_poi_ugv = msg["received_poi"]
+                    for s in self.pois:
+                        if s[0] not in received_poi_ugv:
                             pos = self.calculate_direction(s[1][0], s[1][1], s[1][2], self.length, i_x, i_y)
                             i_x = pos[0]
                             i_y = pos[1]
                             pos_list.append([s[0], pos])
-                            received_sensor_ugv.append(s[0])
+                            received_poi_ugv.append(s[0])
                     self.received_ugv += 1
                     reply_msg = {
-                        "type": "sensor_direction",
+                        "type": "poi_direction",
                         "directions": pos_list,
                     }
                     command = BroadcastMessageCommand(
@@ -102,10 +102,10 @@ class AirProtocol(IProtocol):
                     self.ugv_db.append(msg["id"])
     
     def check_duplicates(self, id, pos):
-        for s in self.sensors:
+        for s in self.pois:
             if s[0] == id:
                 return
-        self.sensors.append([id, pos])
+        self.pois.append([id, pos])
     
     def calculate_direction(self, x, y, z, length, initial_x, initial_y):
         vector_x = x - initial_x
@@ -165,4 +165,4 @@ class AirProtocol(IProtocol):
 
     def finish(self):
         logging.info(f"Final counter values: "
-                     f"received_sensor={self.sensors}")
+                     f"received_poi={self.pois}")

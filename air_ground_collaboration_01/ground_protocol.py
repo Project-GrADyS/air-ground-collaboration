@@ -11,9 +11,9 @@ from tabulate import tabulate
 
 class GroundProtocol(IProtocol):
     sent: int
-    received_sensor: int
+    received_poi: int
     received_uav: int
-    db_sensor: List[int]
+    db_poi: List[int]
     received_directions: List[Tuple]
     mission_plan: MissionMobilityPlugin
     id: int
@@ -23,9 +23,9 @@ class GroundProtocol(IProtocol):
     def initialize(self):
         self.time_poi = -1
         self.sent = 0
-        self.received_sensor = 0
+        self.received_poi = 0
         self.received_uav = 0
-        self.db_sensor = []
+        self.db_poi = []
         self.received_directions = []
         self.id = self.provider.get_id()
         self.got_all = self.provider.get_kwargs().get("got_all")
@@ -33,7 +33,6 @@ class GroundProtocol(IProtocol):
         self.poi_num = self.provider.get_kwargs().get("poi_num")
         self.ugv_num = self.provider.get_kwargs().get("ugv_num")
         self.uav_num = self.provider.get_kwargs().get("uav_num")
-        self.sensor_num = self.provider.get_kwargs().get("sensor_num")
         self.mission_list = [
             [self.initial_mission_point],
         ]
@@ -61,13 +60,13 @@ class GroundProtocol(IProtocol):
                 reply_msg = {
                     "type": "uav_message",
                     "id": self.id,
-                    "received_sensor": self.db_sensor
+                    "received_poi": self.db_poi
                 }
                 command = BroadcastMessageCommand(
                         message=json.dumps(reply_msg)
                     )
                 self.provider.send_communication_command(command)
-            elif msg["type"] == "sensor_direction":
+            elif msg["type"] == "poi_direction":
                 if msg["directions"] != []:
                     d = msg["directions"]
                     logging.info(f"Received message of UAV with directions: {d}")
@@ -79,22 +78,21 @@ class GroundProtocol(IProtocol):
                     #self.mission_plan.stop_mission()
                     self.start_mission(mission_list2)
                     self.received_directions.append(msg["directions"])
-            elif msg["type"] == "sensor_message":
-                self.received_sensor += 1
+            elif msg["type"] == "poi_message":
+                self.received_poi += 1
                 self.check_duplicates(msg["id"])
-                if len(self.db_sensor) == self.poi_num and not self.got_all:
+                if len(self.db_poi) == self.poi_num and not self.got_all:
                     self.end = self.provider.current_time()
-                    length = self.end - self.start
-                    self.time_poi = length
-                    self.provider.set_kwargs("time_poi", length)
+                    self.time_poi = self.end - self.start
+                    self.provider.set_kwargs("time_poi", self.time_poi)
                     self.provider.set_kwargs("got_all", True)
                     self.got_all = True
     
     def check_duplicates(self, id):
-        for i in self.db_sensor:
+        for i in self.db_poi:
             if i == id:
                 return
-        self.db_sensor.append(id)
+        self.db_poi.append(id)
     
     def start_mission(self, ml):
         if not (ml == []):
@@ -119,7 +117,7 @@ class GroundProtocol(IProtocol):
 
         print(tabulate(table_data, headers=headers, tablefmt='grid'))
 
-        print("\nSensor messages received by UGV= ", self.db_sensor)
+        print("\npoi messages received by UGV= ", self.db_poi)
         '''
         #logging.info(f"Final counter values: "
-                     #f"received_uav={self.received_uav} ; received_dir={received_directions_tb} ; received_sensor={self.received_sensor} ; db_sensor={self.db_sensor}")
+                     #f"received_uav={self.received_uav} ; received_dir={received_directions_tb} ; received_poi={self.received_poi} ; db_poi={self.db_poi}")
