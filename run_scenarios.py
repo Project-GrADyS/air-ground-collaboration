@@ -14,17 +14,6 @@ args = {
     "map_size": "100"
 }
 
-args = {
-    "ugv_num": ["2"],
-    "uav_num": ["1"],
-    "poi_num": ["3"],
-    "communication_range": ["15"],
-    "generate_graph": 1,
-    "csv_path": "experiments",
-    "csv_name": "exp02",
-    "map_size": "100"
-}
-
 header = ['experiment', 'ugv_num', 'uav_num', 'poi_num', 'comm_range', 'time_poi', 'time_simulation'] 
   
 

@@ -47,34 +47,29 @@ def main():
 
     ms = map_size / 2
     
-    #poi
+    # PoI
     for _ in range(poi_num):
         sx = uniform(-1 * ms, ms)
         sy = uniform(-1 * ms, ms)
         poi_ids.append(
             builder.add_node(PoIProtocol, (sx, sy, 0))
         )
-    
+
     # UGV
-    d = ugv_num + 1
-    angle = 90 / d
+    angle = 90 / (ugv_num + 1)
+    
     for i in range(ugv_num):
-        a = (i+1) * math.tan(math.radians(angle))
-        if a < 1:
-            gx = ms
-            gy = map_size * a
-            gy = gy - ms
-        elif a == 1:
-            gx = ms
+        current_angle = angle * (i+1)
+        if current_angle <= 45:
+            gx = map_size * math.tan(math.radians(current_angle)) - ms
             gy = ms
         else:
-            gy = ms
-            gx = map_size / a
-            gx = gx - ms
+            gy = map_size * math.tan(math.radians(90 - current_angle)) - ms
+            gx = ms
         ugv_ids.append(
             builder.add_node(GroundProtocol, (-1 * ms, -1 * ms, 0), initial_mission_point=(gx, gy, 0), poi_num=poi_num, ugv_num=ugv_num, uav_num=uav_num, time_poi=-1, got_all=False)
         )
-    
+        
     # UAV
     mission = GridPathPlanning(size=map_size, uav_num=uav_num).define_mission()
     for i in range(uav_num):

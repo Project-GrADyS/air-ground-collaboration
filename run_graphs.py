@@ -57,12 +57,12 @@ plt.ylabel("Average Time to find all PoI")
 plt.savefig(f"{my_path}/analysis/{csv_prefix}_ugv_time.png")
 plt.clf()
 
-# Bar plot numpois x time
+# Bar plot numPoIs x time
 
 grouped_poi = combined_df.groupby("poi_num")["time_poi"].mean().reset_index()
 
 sns.barplot(grouped_poi, x="poi_num", y="time_poi", hue="poi_num", palette='crest')
-plt.xlabel("Number of pois")
+plt.xlabel("Number of PoIs")
 plt.ylabel("Average Time to find all PoI")
 plt.savefig(f"{my_path}/analysis/{csv_prefix}_poi_time.png")
 plt.clf()
