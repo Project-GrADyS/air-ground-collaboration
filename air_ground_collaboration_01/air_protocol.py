@@ -1,5 +1,4 @@
 import logging
-import random
 import math
 
 from gradysim.protocol.interface import IProtocol
@@ -80,14 +79,14 @@ class AirProtocol(IProtocol):
                     logging.info(f"Found UGV {ugv_id}")
                     #pos_list = self.pois.pop()
                     pos_list = []
-                    i_x = self.position[0]
-                    i_y = self.position[1]
+                    uav_x = self.position[0]
+                    uav_y = self.position[1]
                     received_poi_ugv = msg["received_poi"]
                     for s in self.pois:
                         if s[0] not in received_poi_ugv:
-                            pos = self.calculate_direction(s[1][0], s[1][1], s[1][2], self.length, i_x, i_y)
-                            i_x = pos[0]
-                            i_y = pos[1]
+                            pos = self.calculate_direction(s[1][0], s[1][1], s[1][2], self.length, uav_x, uav_y)
+                            uav_x = pos[0]
+                            uav_y = pos[1]
                             pos_list.append([s[0], pos])
                             received_poi_ugv.append(s[0])
                     self.received_ugv += 1

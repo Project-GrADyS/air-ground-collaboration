@@ -7,6 +7,7 @@ from gradysim.simulator.handler.timer import TimerHandler
 #from gradysim.simulator.handler.visualization import VisualizationHandler, VisualizationConfiguration
 from gradysim.simulator.simulation import SimulationBuilder, SimulationConfiguration
 from path_planning.grid_path_planning import GridPathPlanning
+from simulation_config.protocol_config import reconstruct_classes
 from random import uniform
 from graphs.plot_path import PlotPath
 import math
@@ -14,18 +15,26 @@ import sys
 import csv
 import os
 import time
+import json
 
 my_path = os.path.dirname(os.path.abspath(__file__))
-
-# Metric variables
-communication_range = int(sys.argv[5])
 
 # Scenario variables
 ugv_num = int(sys.argv[2])
 poi_num = int(sys.argv[4])
 uav_num = int(sys.argv[3])
 map_size = int(sys.argv[9])
+communication_range = int(sys.argv[5])
 
+# Protocol version
+protocol_strings = json.loads(sys.argv[10])
+protocols = reconstruct_classes(protocol_strings)
+air_protocol = protocols[0]
+ground_protocol = protocols[1]
+poi_protocol = protocols[2]
+protocol_version = sys.argv[11]
+
+# Config variables
 generate_graph = int(sys.argv[6])
 csv_name = sys.argv[7]
 csv_path = sys.argv[8]
@@ -52,7 +61,7 @@ def main():
         sx = uniform(-1 * ms, ms)
         sy = uniform(-1 * ms, ms)
         poi_ids.append(
-            builder.add_node(PoIProtocol, (sx, sy, 0))
+            builder.add_node(poi_protocol, (sx, sy, 0))
         )
 
     # UGV
@@ -67,14 +76,14 @@ def main():
             gy = map_size * math.tan(math.radians(90 - current_angle)) - ms
             gx = ms
         ugv_ids.append(
-            builder.add_node(GroundProtocol, (-1 * ms, -1 * ms, 0), initial_mission_point=(gx, gy, 0), poi_num=poi_num, ugv_num=ugv_num, uav_num=uav_num, time_poi=-1, got_all=False)
+            builder.add_node(ground_protocol, (-1 * ms, -1 * ms, 0), initial_mission_point=(gx, gy, 0), poi_num=poi_num, ugv_num=ugv_num, uav_num=uav_num, time_poi=-1, got_all=False)
         )
         
     # UAV
     mission = GridPathPlanning(size=map_size, uav_num=uav_num).define_mission()
     for i in range(uav_num):
         uav_ids.append(
-            builder.add_node(AirProtocol, (-1 * ms, -1 * ms, 2), mission=mission[i], length=map_size)
+            builder.add_node(air_protocol, (-1 * ms, -1 * ms, 2), mission=mission[i], length=map_size)
         )
     
 
@@ -158,13 +167,13 @@ def main():
         bt = -1
 
     if generate_graph != 0:
-        plot_path = f"{my_path}/graph_images/{csv_name}_exp{experiment_num}.png"
+        plot_path = f"{my_path}/experiments/{csv_path}/protocol_{protocol_version}/images/{csv_name}_exp{experiment_num}.png"
         PlotPath(positions_uav, positions_ugv, poi_positions, communication_range, plot_path).plot_graph()
 
     end_time = time.time()
     
     # CSV
-    with open(f'{csv_path}/{csv_name}.csv', mode='a', newline="") as fd:
+    with open(f'experiments/{csv_path}/protocol_{protocol_version}/data/{csv_name}.csv', mode='a', newline="") as fd:
         data = [[experiment_num, ugv_num, uav_num, poi_num, communication_range, bt, end_time - initial_time]]
         writer = csv.writer(fd)
         writer.writerows(data)
