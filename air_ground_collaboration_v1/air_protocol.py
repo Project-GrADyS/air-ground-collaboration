@@ -12,10 +12,8 @@ from typing import List, Tuple, Dict
 import json
 
 class AirProtocol(IProtocol):
-    sent_poi: int
     received_poi: int
     received_ugv: int
-    sent_ground: int
     position: Tuple
     pois: List
     mission_plan: MissionMobilityPlugin
@@ -75,9 +73,6 @@ class AirProtocol(IProtocol):
                 self.received_poi += 1
             elif msg["type"] == "uav_message":
                 if self.pois != []:
-                    ugv_id = msg["id"]
-                    logging.info(f"Found UGV {ugv_id}")
-                    #pos_list = self.pois.pop()
                     pos_list = []
                     uav_x = self.position[0]
                     uav_y = self.position[1]
@@ -103,8 +98,9 @@ class AirProtocol(IProtocol):
     def check_duplicates(self, id, pos):
         for s in self.pois:
             if s[0] == id:
-                return
+                return True
         self.pois.append([id, pos])
+        return False
     
     def calculate_direction(self, x, y, z, length, initial_x, initial_y):
         vector_x = x - initial_x

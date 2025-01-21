@@ -1,6 +1,7 @@
-from air_ground_collaboration_01.ground_protocol import GroundProtocol as GroundProtocolv1
+from air_ground_collaboration_v1.poi_protocol import PoIProtocol as PoIProtocolv1
 
-class GroundProtocol(GroundProtocolv1):
+
+class PoIProtocol(PoIProtocolv1):
 
     def initialize(self):
         return super().initialize()

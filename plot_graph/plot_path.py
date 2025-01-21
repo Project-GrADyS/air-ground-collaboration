@@ -1,7 +1,7 @@
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from graphs.data_line_width_plot import data_linewidth_plot
+from plot_graph.data_line_width_plot import data_linewidth_plot
 
 class PlotPath:
 
@@ -30,13 +30,17 @@ class PlotPath:
         sns.scatterplot(data=poi_df, x="x", y="y", ax=ax, marker='x', color='black',
                         label='pois', s=100, linewidth=2)
         for line in range(0,poi_df.shape[0]):
+            x, y = poi_df["x"][line], poi_df["y"][line]
+            group = poi_df["group"][line]
             plt.text(
                 poi_df["x"][line]+1.5,
                 poi_df["y"][line]+0.5,
                 poi_df["group"][line],
                 ha='left',
                 weight='normal'
-        )
+            )
+            circle = plt.Circle((x, y), self.communication_range/2, color="#eeeeee", alpha=0.5, edgecolor=None)
+            ax.add_patch(circle)
 
         grouped_uav = position_uav_df.groupby("agent")
         grouped_ugv = position_ugv_df.groupby("agent")

@@ -3,7 +3,7 @@ import csv
 import time
 import json
 from simulation_config.folder_config import create_folder
-from simulation_config.protocol_config import set_protocols
+from simulation_config.algorithm_config import set_algorithms, serialize_algorithms
 
 start_time = time.time()
 
@@ -15,24 +15,25 @@ args = {
     "poi_num": ["5", "15", "25"],
     "communication_range": ["5", "10", "20"],
     "generate_graph": 1,
-    "csv_path": "experiment_test",
-    "map_size": "100"
+    "csv_path": "experiment01",
+    "map_size": "100",
+    "algorithms": ["v1", "v2"] 
 }
-
-header = ['experiment', 'ugv_num', 'uav_num', 'poi_num', 'comm_range', 'time_poi', 'time_simulation'] 
 
 num_experiments = 5
 
 args = {
     "ugv_num": ["3"],
-    "uav_num": ["2"],
+    "uav_num": ["3"],
     "poi_num": ["5"],
     "communication_range": ["10"],
     "generate_graph": 1,
-    "csv_path": "experiment_test",
-    "protocols": ["v1", "v2"],
-    "map_size": "100"
+    "csv_path": "experiment12",
+    "map_size": "100",
+    "algorithms": ["v1", "v2", "v3"] 
 }
+
+header = ['experiment', 'ugv_num', 'uav_num', 'poi_num', 'comm_range', 'time_poi'] 
 
 # Create experiment folder structure
 folder_path = f'experiments/{args["csv_path"]}'
@@ -42,42 +43,40 @@ create_folder(folder_path)
 
 # File name: name_numUGV_numUAV_numpoi_commRange
 
-for protocol_version in args["protocols"]:
-    protocol_path_analysis = folder_path + f'/protocol_{protocol_version}/analysis'
-    protocol_path_data = folder_path + f'/protocol_{protocol_version}/data'
-    protocol_path_images = folder_path + f'/protocol_{protocol_version}/images'
-    create_folder(protocol_path_analysis)
-    create_folder(protocol_path_data)
-    create_folder(protocol_path_images)
+for algorithm_version in args["algorithms"]:
+    algorithm_path_analysis = folder_path + f'/algorithm_{algorithm_version}/analysis'
+    algorithm_path_data = folder_path + f'/algorithm_{algorithm_version}/data'
+    algorithm_path_images = folder_path + f'/algorithm_{algorithm_version}/images'
+    create_folder(algorithm_path_analysis)
+    create_folder(algorithm_path_data)
+    create_folder(algorithm_path_images)
 
-    protocols = set_protocols(protocol_version)
-    protocols_serialized = json.dumps([f"{cls.__module__}.{cls.__name__}" for cls in protocols])
-
-    for comm_range in args["communication_range"]:
-        for uav_num in args["uav_num"]:
-            for ugv_num in args["ugv_num"]:
-                for poi_num in args["poi_num"]:
+for comm_range in args["communication_range"]:
+    for uav_num in args["uav_num"]:
+        for ugv_num in args["ugv_num"]:
+            for poi_num in args["poi_num"]:
+                for algorithm_version in args["algorithms"]:
+                    algorithm_path_data = folder_path + f'/algorithm_{algorithm_version}/data'
                     file_name = args["csv_path"] + "_ugv" + ugv_num + "_uav" + uav_num + "_poi" + poi_num + "_range" + comm_range
-                    with open(protocol_path_data + f"/{file_name}.csv", 'w') as file: 
+                    with open(algorithm_path_data + f"/{file_name}.csv", 'w') as file: 
                         dw = csv.DictWriter(file, fieldnames=header)
                         dw.writeheader()
-                    for i in range(num_experiments):
-                        subprocess.run(["python3", "main.py", 
-                                        str(i+1), 
-                                        ugv_num, 
-                                        uav_num, 
-                                        poi_num, 
-                                        comm_range,
-                                        str(args["generate_graph"]),
-                                        file_name,
-                                        args["csv_path"],
-                                        args["map_size"],
-                                        protocols_serialized,
-                                        protocol_version
-                                        ],)
+                for i in range(num_experiments):
+                    subprocess.run(["python3", "main.py", 
+                                    str(i+1), 
+                                    ugv_num, 
+                                    uav_num, 
+                                    poi_num, 
+                                    comm_range,
+                                    str(args["generate_graph"]),
+                                    file_name,
+                                    args["csv_path"],
+                                    args["map_size"],
+                                    json.dumps(args["algorithms"])
+                                    ],)
 
 # Create plot
-subprocess.run(["python3", "run_graphs.py", args["csv_path"], json.dumps(args["protocols"])],)
+subprocess.run(["python3", "run_graphs.py", args["csv_path"], json.dumps(args["algorithms"])],)
 
 end_time = time.time()
 

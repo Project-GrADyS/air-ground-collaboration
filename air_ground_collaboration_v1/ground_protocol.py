@@ -21,6 +21,8 @@ class GroundProtocol(IProtocol):
     poi_num: int
 
     def initialize(self):
+        self.start = self.provider.current_time()
+        self.ix = 0
         self.time_poi = -1
         self.sent = 0
         self.received_poi = 0
@@ -31,6 +33,7 @@ class GroundProtocol(IProtocol):
         self.got_all = self.provider.get_kwargs().get("got_all")
         self.initial_mission_point = self.provider.get_kwargs().get("initial_mission_point")
         self.poi_num = self.provider.get_kwargs().get("poi_num")
+        #self.found_poi = self.provider.get_kwargs().get("found_poi")
         self.ugv_num = self.provider.get_kwargs().get("ugv_num")
         self.uav_num = self.provider.get_kwargs().get("uav_num")
         self.mission_list = [
@@ -51,7 +54,6 @@ class GroundProtocol(IProtocol):
     def handle_timer(self, timer: str):
         if timer == "mobility":
             self.start_mission(ml=self.mission_list)
-            self.start = self.provider.current_time()
 
     def handle_packet(self, message: str):
         msg = json.loads(message)
@@ -81,18 +83,21 @@ class GroundProtocol(IProtocol):
             elif msg["type"] == "poi_message":
                 self.received_poi += 1
                 self.check_duplicates(msg["id"])
+                '''
                 if len(self.db_poi) == self.poi_num and not self.got_all:
                     self.end = self.provider.current_time()
                     self.time_poi = self.end - self.start
                     self.provider.set_kwargs("time_poi", self.time_poi)
                     self.provider.set_kwargs("got_all", True)
                     self.got_all = True
+                '''
     
     def check_duplicates(self, id):
         for i in self.db_poi:
             if i == id:
                 return
         self.db_poi.append(id)
+        self.provider.set_kwargs("found_poi", self.db_poi)
     
     def start_mission(self, ml):
         if not (ml == []):
@@ -100,9 +105,9 @@ class GroundProtocol(IProtocol):
             self.mission_plan.start_mission(ml2)
     
     def handle_telemetry(self, telemetry: Telemetry):
-        pass
-        #self.position = telemetry.current_position
-    
+        self.end = self.provider.current_time()
+        self.time_poi = self.end - self.start
+        self.provider.set_kwargs("time_poi", self.time_poi)
 
     def finish(self):
         '''

@@ -1,15 +1,11 @@
-from air_ground_collaboration_02.air_protocol import AirProtocol
-from air_ground_collaboration_02.ground_protocol import GroundProtocol
-from air_ground_collaboration_02.poi_protocol import PoIProtocol
 from gradysim.simulator.handler.communication import CommunicationMedium, CommunicationHandler
 from gradysim.simulator.handler.mobility import MobilityHandler
 from gradysim.simulator.handler.timer import TimerHandler
-#from gradysim.simulator.handler.visualization import VisualizationHandler, VisualizationConfiguration
 from gradysim.simulator.simulation import SimulationBuilder, SimulationConfiguration
 from path_planning.grid_path_planning import GridPathPlanning
-from simulation_config.protocol_config import reconstruct_classes
+from simulation_config.algorithm_config import set_algorithms
 from random import uniform
-from graphs.plot_path import PlotPath
+from plot_graph.plot_path import PlotPath
 import math
 import sys
 import csv
@@ -26,13 +22,10 @@ uav_num = int(sys.argv[3])
 map_size = int(sys.argv[9])
 communication_range = int(sys.argv[5])
 
-# Protocol version
-protocol_strings = json.loads(sys.argv[10])
-protocols = reconstruct_classes(protocol_strings)
-air_protocol = protocols[0]
-ground_protocol = protocols[1]
-poi_protocol = protocols[2]
-protocol_version = sys.argv[11]
+# Algorithm version
+#algorithm_strings = json.loads(sys.argv[10])
+#algorithms = reconstruct_classes(algorithm_strings)
+algorithm_versions = list(json.loads(sys.argv[10]))
 
 # Config variables
 generate_graph = int(sys.argv[6])
@@ -40,9 +33,20 @@ csv_name = sys.argv[7]
 csv_path = sys.argv[8]
 experiment_num = sys.argv[1]
 
-#color_list = ['#cf7073', '#01a049', "#00008a", "#efbf04", "#8a00c4", "#ffa600"]
+# Other
+half_map_size = map_size / 2
+random_poi = []
 
-def main():
+for _ in range(poi_num):
+    random_poi.append((uniform(-1 * half_map_size, half_map_size), uniform(-1 * half_map_size, half_map_size), 0))
+
+def main(algorithm_version):
+
+    algorithms = set_algorithms(algorithm_version)
+    air_protocol = algorithms[0]
+    ground_protocol = algorithms[1]
+    poi_protocol = algorithms[2]
+
     config = SimulationConfiguration(
         duration=4000,
         execution_logging=False,
@@ -54,14 +58,12 @@ def main():
     uav_ids: list[int] = []
     poi_ids: list[int] = []
 
-    ms = map_size / 2
+    half_map_size = map_size / 2
     
-    # PoI
-    for _ in range(poi_num):
-        sx = uniform(-1 * ms, ms)
-        sy = uniform(-1 * ms, ms)
+    # PoI 
+    for i in range(poi_num):
         poi_ids.append(
-            builder.add_node(poi_protocol, (sx, sy, 0))
+            builder.add_node(poi_protocol, random_poi[i])
         )
 
     # UGV
@@ -70,20 +72,20 @@ def main():
     for i in range(ugv_num):
         current_angle = angle * (i+1)
         if current_angle <= 45:
-            gx = map_size * math.tan(math.radians(current_angle)) - ms
-            gy = ms
+            gx = map_size * math.tan(math.radians(current_angle)) - half_map_size
+            gy = half_map_size
         else:
-            gy = map_size * math.tan(math.radians(90 - current_angle)) - ms
-            gx = ms
+            gy = map_size * math.tan(math.radians(90 - current_angle)) - half_map_size
+            gx = half_map_size
         ugv_ids.append(
-            builder.add_node(ground_protocol, (-1 * ms, -1 * ms, 0), initial_mission_point=(gx, gy, 0), poi_num=poi_num, ugv_num=ugv_num, uav_num=uav_num, time_poi=-1, got_all=False)
+            builder.add_node(ground_protocol, (-1 * half_map_size, -1 * half_map_size, 0), initial_mission_point=(gx, gy, 0), poi_num=poi_num, ugv_num=ugv_num, uav_num=uav_num, time_poi=-1, got_all=False, found_poi=[]),
         )
         
     # UAV
     mission = GridPathPlanning(size=map_size, uav_num=uav_num).define_mission()
     for i in range(uav_num):
         uav_ids.append(
-            builder.add_node(air_protocol, (-1 * ms, -1 * ms, 2), mission=mission[i], length=map_size)
+            builder.add_node(air_protocol, (-1 * half_map_size, -1 * half_map_size, 2), mission=mission[i], length=map_size)
         )
     
 
@@ -95,10 +97,6 @@ def main():
     builder.add_handler(CommunicationHandler(medium))
 
     builder.add_handler(MobilityHandler())
-
-    #conf = VisualizationConfiguration(x_range=(-100,-100), y_range=(-100,-100))
-
-    #builder.add_handler(VisualizationHandler(configuration=conf))
 
     simulation = builder.build()
 
@@ -115,11 +113,10 @@ def main():
             "z": poi_position[2],
             "group": poi_id
         })
-    
+
+    found_poi = []
     got_all = False
     last_second = 0
-
-    initial_time = time.time()
 
     while simulation.step_simulation():
         if got_all:
@@ -155,28 +152,26 @@ def main():
                     "z": ugv_position[2],
                     "time_poi": time_poi["time_poi"]
                 })
-                if simulation.get_node(ugv_id).kwargs["got_all"]:
+                fp = simulation.get_node(ugv_id).kwargs["found_poi"]
+                found_poi = list(set(found_poi + fp))
+                #print(found_poi)
+                if len(found_poi) == poi_num:
                     got_all = True
+                    total_time = positions_ugv[-1]["time_poi"]
     
-    bt = math.inf
-    for i in range(ugv_num):
-        tp = positions_ugv[(i+1)*(-1)]["time_poi"]
-        if tp != -1 and tp < bt:
-            bt = tp
-    if bt == math.inf:
-        bt = -1
+    if not got_all:
+        total_time = -1
 
     if generate_graph != 0:
-        plot_path = f"{my_path}/experiments/{csv_path}/protocol_{protocol_version}/images/{csv_name}_exp{experiment_num}.png"
+        plot_path = f"{my_path}/experiments/{csv_path}/algorithm_{algorithm_version}/images/{csv_name}_exp{experiment_num}.png"
         PlotPath(positions_uav, positions_ugv, poi_positions, communication_range, plot_path).plot_graph()
-
-    end_time = time.time()
     
     # CSV
-    with open(f'experiments/{csv_path}/protocol_{protocol_version}/data/{csv_name}.csv', mode='a', newline="") as fd:
-        data = [[experiment_num, ugv_num, uav_num, poi_num, communication_range, bt, end_time - initial_time]]
+    with open(f'experiments/{csv_path}/algorithm_{algorithm_version}/data/{csv_name}.csv', mode='a', newline="") as fd:
+        data = [[experiment_num, ugv_num, uav_num, poi_num, communication_range, total_time]]
         writer = csv.writer(fd)
         writer.writerows(data)
     
 if __name__ == "__main__":
-    main()
+    for algorithm_version in algorithm_versions:
+        main(algorithm_version)

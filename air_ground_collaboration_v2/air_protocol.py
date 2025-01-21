@@ -1,4 +1,4 @@
-from air_ground_collaboration_01.air_protocol import AirProtocol as AirProtocolv1
+from air_ground_collaboration_v1.air_protocol import AirProtocol as AirProtocolv1
 
 from gradysim.protocol.messages.communication import BroadcastMessageCommand
 
@@ -7,8 +7,6 @@ import json
 import math
 
 class AirProtocol(AirProtocolv1):
-
-    sections: List[List[Tuple[int]]]
 
     def initialize(self):
         return super().initialize()
@@ -24,9 +22,6 @@ class AirProtocol(AirProtocolv1):
                 self.received_poi += 1
             elif msg["type"] == "uav_message":
                 if self.pois != []:
-                    #ugv_id = msg["id"]
-                    #logging.info(f"Found UGV {ugv_id}")
-                    #pos_list = self.pois.pop()
                     pos_list = []
                     uav_x = self.position[0]
                     uav_y = self.position[1]
@@ -50,8 +45,6 @@ class AirProtocol(AirProtocolv1):
                     )
                     self.provider.send_communication_command(command)
                     self.ugv_db.append(msg["id"])
-
-        #return super().handle_packet(message)
     
     def distance(self, point1, point2):
         """Calculate the Euclidean distance between two points."""
@@ -66,7 +59,7 @@ class AirProtocol(AirProtocolv1):
         - list_poi: A list of points in the format [index, [x, y, z]].
 
         Returns:
-        - list: Points ordered by proximity.
+        - list_ordered_poi: Points ordered by proximity.
         """
         ordered_points = []
         current_position = uav_position
