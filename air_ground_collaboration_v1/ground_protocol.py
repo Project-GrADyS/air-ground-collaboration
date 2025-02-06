@@ -62,7 +62,7 @@ class GroundProtocol(IProtocol):
                 reply_msg = {
                     "type": "uav_message",
                     "id": self.id,
-                    "received_poi": self.db_poi
+                    #"received_poi": self.db_poi
                 }
                 command = BroadcastMessageCommand(
                         message=json.dumps(reply_msg)

@@ -26,7 +26,7 @@ class AirProtocol(IProtocol):
         self.received_poi = 0
         self.received_ugv = 0
         self.position = Tuple[float, float, float]
-        self.pois = []
+        self.poi_buffer = []
         self.path_planning = self.provider.get_kwargs().get("mission")
         self.length = self.provider.get_kwargs().get("length")
         self.mission_plan = MissionMobilityPlugin(self, MissionMobilityConfiguration(
@@ -69,21 +69,22 @@ class AirProtocol(IProtocol):
         msg = json.loads(message)
         if msg != '':
             if msg["type"] == "poi_message":
-                self.check_duplicates(msg["id"], msg["position"])
+                position = self.position
+                self.check_duplicates(msg["id"], position)
                 self.received_poi += 1
             elif msg["type"] == "uav_message":
-                if self.pois != []:
+                if self.poi_buffer != []:
                     pos_list = []
                     uav_x = self.position[0]
                     uav_y = self.position[1]
-                    received_poi_ugv = msg["received_poi"]
-                    for s in self.pois:
-                        if s[0] not in received_poi_ugv:
-                            pos = self.calculate_direction(s[1][0], s[1][1], s[1][2], self.length, uav_x, uav_y)
-                            uav_x = pos[0]
-                            uav_y = pos[1]
-                            pos_list.append([s[0], pos])
-                            received_poi_ugv.append(s[0])
+                    #received_poi_ugv = msg["received_poi"]
+                    for s in self.poi_buffer:
+                        #if s[0] not in received_poi_ugv:
+                        pos = self.calculate_direction(s[1][0], s[1][1], s[1][2], self.length, uav_x, uav_y)
+                        uav_x = pos[0]
+                        uav_y = pos[1]
+                        pos_list.append([s[0], pos])
+                            #received_poi_ugv.append(s[0])
                     self.received_ugv += 1
                     reply_msg = {
                         "type": "poi_direction",
@@ -96,27 +97,28 @@ class AirProtocol(IProtocol):
                     self.ugv_db.append(msg["id"])
     
     def check_duplicates(self, id, pos):
-        for s in self.pois:
+        """
+        Checks if UAV has already collected PoI postion
+        """
+        for s in self.poi_buffer:
             if s[0] == id:
                 return True
-        self.pois.append([id, pos])
+        self.poi_buffer.append([id, pos])
         return False
     
     def calculate_direction(self, x, y, z, length, initial_x, initial_y):
+        '''
         vector_x = x - initial_x
         vector_y = y - initial_y
         direction_x = vector_x / math.sqrt(math.pow(vector_x, 2) + math.pow(vector_y, 2))
         direction_y = vector_y / math.sqrt(math.pow(vector_x, 2) + math.pow(vector_y, 2))
 
-        dx = x - initial_x
-        dy = y - initial_y
-
         half_length = length//2
 
-        tb = (-1* half_length - initial_x) / dx
+        a = (half_length + initial_x) / vector_x
         
-        dir_x = initial_x + tb * dx
-        dir_y = initial_y + tb * dy
+        dir_x = initial_x - a * vector_x
+        dir_y = initial_y - a * vector_y
 
         theta = math.atan2(y - initial_y, x - initial_x)
 
@@ -152,12 +154,13 @@ class AirProtocol(IProtocol):
                 dir_x = half_length
         elif dir_y < 0 and dir_y < (-1* half_length):
             dir_y = -1* half_length
-
-        return (dir_x, dir_y, z)
+        '''
+        #return (dir_x, dir_y, z)
+        return (x, y, z)
 
     def handle_telemetry(self, telemetry: Telemetry):
         self.position = telemetry.current_position
 
     def finish(self):
         logging.info(f"Final counter values: "
-                     f"received_poi={self.pois}")
+                     f"received_poi={self.poi_buffer}")

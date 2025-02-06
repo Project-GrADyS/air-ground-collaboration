@@ -48,7 +48,7 @@ def main(algorithm_version):
     poi_protocol = algorithms[2]
 
     config = SimulationConfiguration(
-        duration=4000,
+        duration=8000,
         execution_logging=False,
         #log_file="logs/log.txt"
     )

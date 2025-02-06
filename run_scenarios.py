@@ -15,20 +15,7 @@ args = {
     "poi_num": ["5", "15", "25"],
     "communication_range": ["5", "10", "20"],
     "generate_graph": 1,
-    "csv_path": "experiment01",
-    "map_size": "100",
-    "algorithms": ["v1", "v2"] 
-}
-
-num_experiments = 5
-
-args = {
-    "ugv_num": ["3"],
-    "uav_num": ["3"],
-    "poi_num": ["5"],
-    "communication_range": ["10"],
-    "generate_graph": 1,
-    "csv_path": "experiment12",
+    "csv_path": "experiment_all",
     "map_size": "100",
     "algorithms": ["v1", "v2", "v3"] 
 }

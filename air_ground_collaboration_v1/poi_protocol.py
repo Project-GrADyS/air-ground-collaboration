@@ -33,7 +33,7 @@ class PoIProtocol(IProtocol):
             msg = {
                 "type": "poi_message",
                 "id": self.id,
-                "position": self.position,
+                #"position": self.position,
             }
             command = BroadcastMessageCommand(
                 message=json.dumps(msg)
@@ -50,7 +50,8 @@ class PoIProtocol(IProtocol):
         pass
 
     def handle_telemetry(self, telemetry: Telemetry):
-        self.position = telemetry.current_position
+        pass
+        #self.position = telemetry.current_position
 
     def finish(self):
         pass

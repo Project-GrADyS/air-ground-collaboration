@@ -18,23 +18,23 @@ class AirProtocol(AirProtocolv1):
         msg = json.loads(message)
         if msg != '':
             if msg["type"] == "poi_message":
-                self.check_duplicates(msg["id"], msg["position"])
+                self.check_duplicates(msg["id"], self.position)
                 self.received_poi += 1
             elif msg["type"] == "uav_message":
-                if self.pois != []:
+                if self.poi_buffer != []:
                     pos_list = []
                     uav_x = self.position[0]
                     uav_y = self.position[1]
                     uav_position = (uav_x, uav_y)
-                    received_poi_ugv = msg["received_poi"]
-                    sorted_pois = self.order_points_by_proximity(uav_position, self.pois)
+                    #received_poi_ugv = msg["received_poi"]
+                    sorted_pois = self.order_points_by_proximity(uav_position, self.poi_buffer)
                     for s in sorted_pois:
-                        if s[0] not in received_poi_ugv:
-                            pos = self.calculate_direction(s[1][0], s[1][1], s[1][2], self.length, uav_x, uav_y)
-                            uav_x = pos[0]
-                            uav_y = pos[1]
-                            pos_list.append([s[0], pos])
-                            received_poi_ugv.append(s[0])
+                        #if s[0] not in received_poi_ugv:
+                        pos = self.calculate_direction(s[1][0], s[1][1], s[1][2], self.length, uav_x, uav_y)
+                        uav_x = pos[0]
+                        uav_y = pos[1]
+                        pos_list.append([s[0], pos])
+                            #received_poi_ugv.append(s[0])
                     self.received_ugv += 1
                     reply_msg = {
                         "type": "poi_direction",
