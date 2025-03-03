@@ -15,7 +15,7 @@ args = {
     "poi_num": ["5", "15", "25"],
     "communication_range": ["5", "10", "20"],
     "generate_graph": 1,
-    "csv_path": "experiment_all",
+    "csv_path": "experiment_all2",
     "map_size": "100",
     "algorithms": ["v1", "v2", "v3"] 
 }
