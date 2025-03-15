@@ -1,4 +1,4 @@
-from air_ground_collaboration_v1.air_protocol import AirProtocol as AirProtocolv1
+from A2G_Coord_v1.air_protocol import AirProtocol as AirProtocolv1
 
 from gradysim.protocol.messages.communication import BroadcastMessageCommand
 

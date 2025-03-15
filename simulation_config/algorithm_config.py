@@ -1,14 +1,14 @@
-from air_ground_collaboration_v1.air_protocol import AirProtocol as AirProtocolv1
-from air_ground_collaboration_v1.ground_protocol import GroundProtocol as GroundProtocolv1
-from air_ground_collaboration_v1.poi_protocol import PoIProtocol as PoIProtocolv1
+from A2G_Coord_v1.air_protocol import AirProtocol as AirProtocolv1
+from A2G_Coord_v1.ground_protocol import GroundProtocol as GroundProtocolv1
+from A2G_Coord_v1.poi_protocol import PoIProtocol as PoIProtocolv1
 
-from air_ground_collaboration_v2.air_protocol import AirProtocol as AirProtocolv2
-from air_ground_collaboration_v2.ground_protocol import GroundProtocol as GroundProtocolv2
-from air_ground_collaboration_v2.poi_protocol import PoIProtocol as PoIProtocolv2
+from A2G_Coord_v2.air_protocol import AirProtocol as AirProtocolv2
+from A2G_Coord_v2.ground_protocol import GroundProtocol as GroundProtocolv2
+from A2G_Coord_v2.poi_protocol import PoIProtocol as PoIProtocolv2
 
-from air_ground_collaboration_v3.air_protocol import AirProtocol as AirProtocolv3
-from air_ground_collaboration_v3.ground_protocol import GroundProtocol as GroundProtocolv3
-from air_ground_collaboration_v3.poi_protocol import PoIProtocol as PoIProtocolv3
+from A2G_Coord_v3.air_protocol import AirProtocol as AirProtocolv3
+from A2G_Coord_v3.ground_protocol import GroundProtocol as GroundProtocolv3
+from A2G_Coord_v3.poi_protocol import PoIProtocol as PoIProtocolv3
 
 import importlib
 import json

@@ -1,4 +1,4 @@
-from air_ground_collaboration_v1.poi_protocol import PoIProtocol as PoIProtocolv1
+from A2G_Coord_v1.poi_protocol import PoIProtocol as PoIProtocolv1
 
 
 class PoIProtocol(PoIProtocolv1):

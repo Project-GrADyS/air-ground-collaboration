@@ -1,4 +1,4 @@
-from air_ground_collaboration_v1.ground_protocol import GroundProtocol as GroundProtocolv1
+from A2G_Coord_v1.ground_protocol import GroundProtocol as GroundProtocolv1
 
 class GroundProtocol(GroundProtocolv1):
 

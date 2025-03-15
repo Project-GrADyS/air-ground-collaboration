@@ -107,7 +107,7 @@ class AirProtocol(IProtocol):
         return False
     
     def calculate_direction(self, x, y, z, length, initial_x, initial_y):
-        '''
+        
         vector_x = x - initial_x
         vector_y = y - initial_y
         direction_x = vector_x / math.sqrt(math.pow(vector_x, 2) + math.pow(vector_y, 2))
@@ -154,9 +154,8 @@ class AirProtocol(IProtocol):
                 dir_x = half_length
         elif dir_y < 0 and dir_y < (-1* half_length):
             dir_y = -1* half_length
-        '''
-        #return (dir_x, dir_y, z)
-        return (x, y, z)
+        
+        return (dir_x, dir_y, z)
 
     def handle_telemetry(self, telemetry: Telemetry):
         self.position = telemetry.current_position
