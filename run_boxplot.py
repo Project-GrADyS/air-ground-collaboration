@@ -36,28 +36,28 @@ all_df = pd.concat({'v1': alg_df[0], 'v2': alg_df[1], 'v3': alg_df[2]}, names=['
 all_df = all_df.reset_index(level=0).reset_index(drop=True)
 
 # UGV Number
-sns.boxplot(data=all_df, x='ugv_num', y='time_poi', hue='version', palette='crest')
+sns.boxplot(data=all_df, x='ugv_num', y='time_poi', hue='version', palette='crest', showfliers = False)
 plt.xlabel("Number of UGVs")
 plt.ylabel("Time to find all PoI")
 plt.savefig(f"{path}/{csv_prefix}_boxplot_ugv_time.png")
 plt.clf()
 
 # UAV Number
-sns.boxplot(data=all_df, x='uav_num', y='time_poi', hue='version', palette='crest')
+sns.boxplot(data=all_df, x='uav_num', y='time_poi', hue='version', palette='crest', showfliers = False)
 plt.xlabel("Number of UAVs")
 plt.ylabel("Time to find all PoI")
 plt.savefig(f"{path}/{csv_prefix}_boxplot_uav_time.png")
 plt.clf()
 
 # PoI Number
-sns.boxplot(data=all_df, x='poi_num', y='time_poi', hue='version', palette='crest')
+sns.boxplot(data=all_df, x='poi_num', y='time_poi', hue='version', palette='crest', showfliers = False)
 plt.xlabel("Number of PoIs")
 plt.ylabel("Time to find all PoI")
 plt.savefig(f"{path}/{csv_prefix}_boxplot_poi_time.png")
 plt.clf()
 
 # Communication Range
-sns.boxplot(data=all_df, x='comm_range', y='time_poi', hue='version', palette='crest')
+sns.boxplot(data=all_df, x='comm_range', y='time_poi', hue='version', palette='crest', showfliers = False)
 plt.xlabel("Communication Range")
 plt.ylabel("Time to find all PoI")
 plt.savefig(f"{path}/{csv_prefix}_boxplot_range_time.png")
